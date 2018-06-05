@@ -56,7 +56,7 @@ def event_prob(layer_masks):
     #     log_prob, [tf.reduce_mean(log_prob)], message='log_prob mean')
 
     layer_probs = tf.exp(log_prob, name='layer_probs')
-    escape_probs = 1-tf.reduce_sum(layer_probs, axis=0, keepdims=True)
+    escape_probs = 1-tf.reduce_sum(layer_probs, axis=0, keep_dims=True)
     return layer_probs, escape_probs
 
 
@@ -172,7 +172,7 @@ def zbuffer_composition_loss(
 
     layer_probs = nn_helpers.zbuffer_weights(
         layer_disps/max_disp, scale=zbuf_scale)*layer_masks
-    probs_sum = tf.reduce_sum(layer_probs, axis=0, keepdims=True)
+    probs_sum = tf.reduce_sum(layer_probs, axis=0, keep_dims=True)
     layer_probs = nn_helpers.divide_safe(layer_probs, probs_sum)
 
     layerwise_cost = tf.square(layer_imgs-trg_imgs)*layer_probs

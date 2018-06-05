@@ -17,6 +17,12 @@
 """Script for running ldi predictor experiment.
 """
 
+# Sample kitti 2 layer experiment script:
+# python ldi_enc_dec.py --dataset=kitti --kitti_data_root=/data0/shubhtuls/datasets/kitti --kitti_dataset_variant=raw_city --batch_size=4 --n_layers=2 --use_unet=true --num_iter=500000 --disp_smoothness_wt=0.1 --exp_name=kitti_rcity_ldi_nl2 --n_layerwise_steps=3 --trg_splat_downsampling=0.5 --compose_splat_wt=1.0 --indep_splat_wt=1.0 --self_cons_wt=10 --splat_bdry_ignore=0.05 --img_width=768 --zbuf_scale=50 --log_freq=500
+
+# Sample synthetic 2 layer experiment script:
+# CUDA_VISIBLE_DEVICES=0 python ldi_enc_dec.py --dataset=synthetic --pascal_objects_dir=/data0/shubhtuls/code/lsi/cachedir/sbd/objects --sun_imgs_dir=/data1/shubhtuls/datasets/SUN2012pascalformat/JPEGImages --batch_size=4 --n_layers=2 --use_unet=true --num_iter=500000 --disp_smoothness_wt=0.1 --exp_name=synth_ldi_nl2 --n_layerwise_steps=3 --trg_splat_downsampling=0.5 --compose_splat_wt=1.0 --indep_splat_wt=1.0 --self_cons_wt=10 --splat_bdry_ignore=0.05 --zbuf_scale=50 --log_freq=500
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -95,6 +101,8 @@ flags.DEFINE_enum(
     'kitti_dataset_variant', 'mview', ['odom', 'mview', 'raw_city'],
     'Kitti set to use'
 )
+flags.DEFINE_boolean(
+    'kitti_dl_disparities', False, 'Output gt info for kitti disparities')
 
 ## Flags related to the training (loss, CNN architecture etc.)
 flags.DEFINE_float('self_cons_wt', 1.0,
@@ -378,7 +386,7 @@ class Trainer(train_utils.Trainer):
         # Visualize splat losses
         lwise_splat_loss = tf.reduce_mean(  # mean across channels
             tf.abs(to_recons_img_downsampled - recons_splat),
-            axis=4, keepdims=True)
+            axis=4, keep_dims=True)
         tf.summary.image(
             loss_img_name + '_' + sp_loss_type + '_splat_loss',
             tf.reduce_min(  # min across layers

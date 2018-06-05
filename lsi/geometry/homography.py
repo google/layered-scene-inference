@@ -191,7 +191,7 @@ def shift_plane_eqns(plane_shift, pred_planes):
   a = pred_planes[1]
   n_hat_t = n_hat
   # plane_shift = tf.Print(plane_shift, [plane_shift])
-  a_t = a - tf.reduce_sum(plane_shift*n_hat, axis=-1, keepdims=True)
+  a_t = a - tf.reduce_sum(plane_shift*n_hat, axis=-1, keep_dims=True)
   # a_t = tf.Print(a_t, [a_t])
   return [n_hat_t, a_t]
 
@@ -212,5 +212,5 @@ def trg_disp_maps(pixel_coords_trg, k_t, rot, t, n_hat, a):
   with tf.name_scope('trg_disp_maps'):
     dmats_t = inv_homography_dmat(k_t, rot, t, n_hat, a)  # size: [...] X 1 X 3
     disp_t = tf.reduce_sum(
-        tf.expand_dims(dmats_t, -2)*pixel_coords_trg, axis=-1, keepdims=True)
+        tf.expand_dims(dmats_t, -2)*pixel_coords_trg, axis=-1, keep_dims=True)
     return disp_t

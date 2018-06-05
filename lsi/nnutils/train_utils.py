@@ -51,7 +51,7 @@ def define_default_flags(flags):
   flags.DEFINE_integer('img_height', 256, 'image height')
   flags.DEFINE_integer('img_width', 256, 'image width')
   flags.DEFINE_integer('log_freq', 5, 'logging frequency')
-  flags.DEFINE_integer('checkpoint_freq', 20000, 'checkpoint frequency')
+  flags.DEFINE_integer('checkpoint_freq', 50000, 'checkpoint frequency')
   flags.DEFINE_integer('save_latest_freq', 2000, 'latest model save frequency')
   flags.DEFINE_float('learning_rate', 0.0001, 'learning rate')
   flags.DEFINE_float('beta1', 0.9, 'Momentum term of adam')

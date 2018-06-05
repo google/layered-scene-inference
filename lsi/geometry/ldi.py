@@ -210,17 +210,17 @@ def pixelwise_discrepancy(
     n_layers = imgs_ldi.get_shape().as_list()[0]
 
     # img_cost = tf.reduce_mean(
-    #     tf.square(imgs_ldi-img), axis=-1, keepdims=True)
+    #     tf.square(imgs_ldi-img), axis=-1, keep_dims=True)
     # disp_cost = tf.square(disps_ldi-disp)
-    img_cost = tf.reduce_mean(tf.abs(imgs_ldi-img), axis=-1, keepdims=True)
+    img_cost = tf.reduce_mean(tf.abs(imgs_ldi-img), axis=-1, keep_dims=True)
     disp_cost = tf.abs(disps_ldi-disp)
     layerwise_cost = masks_ldi*(pix_diff_wt*img_cost + disp_diff_wt*disp_cost)
     layerwise_cost += (1-masks_ldi)*unmatch_cost
-    pixelwise_cost = tf.reduce_min(layerwise_cost, axis=0, keepdims=False)
+    pixelwise_cost = tf.reduce_min(layerwise_cost, axis=0, keep_dims=False)
     pixelwise_layer = tf.argmin(layerwise_cost, axis=0)
     layer_onehot = tf.one_hot(pixelwise_layer, n_layers, axis=0)
-    argmin_img = tf.reduce_sum(layer_onehot*imgs_ldi, axis=0, keepdims=False)
-    argmin_disp = tf.reduce_sum(layer_onehot*disps_ldi, axis=0, keepdims=False)
+    argmin_img = tf.reduce_sum(layer_onehot*imgs_ldi, axis=0, keep_dims=False)
+    argmin_disp = tf.reduce_sum(layer_onehot*disps_ldi, axis=0, keep_dims=False)
 
     # print(layer_onehot.get_shape().as_list())
 
@@ -324,10 +324,10 @@ def forward_splat(
     trg_disp = nn_helpers.divide_safe(trg_disp, trg_wts)
 
     if compose_layers:
-      trg_img = tf.reduce_sum(trg_img, axis=0, keepdims=True)
-      trg_wts = tf.reduce_sum(trg_wts, axis=0, keepdims=True)
-      # trg_disp = tf.reduce_sum(trg_disp, axis=0, keepdims=True)
-      trg_disp = tf.reduce_max(trg_disp, axis=0, keepdims=True)
+      trg_img = tf.reduce_sum(trg_img, axis=0, keep_dims=True)
+      trg_wts = tf.reduce_sum(trg_wts, axis=0, keep_dims=True)
+      # trg_disp = tf.reduce_sum(trg_disp, axis=0, keep_dims=True)
+      trg_disp = tf.reduce_max(trg_disp, axis=0, keep_dims=True)
 
     trg_img = nn_helpers.divide_safe(trg_img, trg_wts)
     # trg_disp = nn_helpers.divide_safe(trg_disp, trg_wts)

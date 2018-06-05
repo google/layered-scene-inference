@@ -262,7 +262,7 @@ class QueuedRandomTextureLoader(object):
       image_reader = tf.WholeFileReader()
       _, image_file = image_reader.read(filename_queue)
       # image_file = tf.Print(image_file, [image_file_key])
-      image = tf.cast(tf.image.decode_image(image_file), 'float32')
+      image = tf.cast(tf.image.decode_image(image_file, channels=nc), 'float32')
       image *= 1.0/255  # since images are loaded in [0, 255]
       image = tf.slice(image, [0, 0, 0], [-1, -1, nc])
 

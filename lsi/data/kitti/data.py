@@ -16,6 +16,9 @@
 
 """Kitti Data Loader.
 """
+
+# use raw data downloader: http://www.cvlibs.net/download.php?file=raw_data_downloader.zip
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -107,7 +110,8 @@ class DataLoader(object):
     elif self.dataset_variant == 'raw_city':
       # Dataset corresponds to the multi-view extension here
       # http://www.cvlibs.net/datasets/kitti/raw_data.php
-      self.root_dir = os.path.join(self.root_dir, 'raw')
+      # self.root_dir = os.path.join(self.root_dir, 'raw')
+      self.root_dir = os.path.join(self.root_dir, 'kitti_raw')
 
     self.h = opts.img_height
     self.w = opts.img_width

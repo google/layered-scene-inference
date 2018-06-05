@@ -168,9 +168,9 @@ def soft_z_buffering(layer_masks, layer_disps, depth_softmax_temp=1):
   log_depth_probs = -layer_depths/depth_softmax_temp
 
   log_layer_probs = tf.log(layer_masks + eps) + log_depth_probs
-  log_layer_probs -= tf.reduce_max(log_layer_probs, axis=0, keepdims=True)
+  log_layer_probs -= tf.reduce_max(log_layer_probs, axis=0, keep_dims=True)
   layer_probs = tf.exp(log_layer_probs)
-  probs_sum = tf.reduce_sum(layer_probs, axis=0, keepdims=True)
+  probs_sum = tf.reduce_sum(layer_probs, axis=0, keep_dims=True)
   layer_probs = tf.divide(layer_probs, probs_sum)
   return layer_probs
 
