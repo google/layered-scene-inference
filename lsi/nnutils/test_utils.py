@@ -26,6 +26,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy.misc
 import scipy.misc.pilutil
+import scipy.io as sio
+
 import tensorflow as tf
 from pyglib import log
 from lsi.nnutils import helpers as nn_helpers
@@ -40,11 +42,11 @@ def define_default_flags(flags):
   """
 
   ## Flags for logging and snapshotting
-  flags.DEFINE_string('checkpoint_dir', '/tmp/experiments/snapshots/',
+  flags.DEFINE_string('checkpoint_dir', '/data0/shubhtuls/code/lsi/cachedir/snapshots/',
                       'Root directory for tensorflow output files')
-  flags.DEFINE_string('results_vis_dir', '/tmp/experiments/visualization/',
+  flags.DEFINE_string('results_vis_dir', '/data0/shubhtuls/code/lsi/cachedir/visualization/',
                       'Root directory for image output files')
-  flags.DEFINE_string('results_eval_dir', '/tmp/experiments/evluation/',
+  flags.DEFINE_string('results_eval_dir', '/data0/shubhtuls/code/lsi/cachedir/evaluation/',
                       'Root directory for results')
   flags.DEFINE_string(
       'exp_name', '',
@@ -59,6 +61,7 @@ def define_default_flags(flags):
   flags.DEFINE_integer('img_height', 256, 'image height')
   flags.DEFINE_integer('img_width', 256, 'image width')
   flags.DEFINE_integer('visuals_freq', 10, 'logging frequency for visuals')
+  flags.DEFINE_boolean('save_pred_results', False, 'Save predictions at every iter. Useful for KITTI depth eval.')
 
 
 class Tester(object):
@@ -105,9 +108,11 @@ class Tester(object):
 
   def init_graph(self):
     self.visuals = {}
+    self.pred_results = {}
     self.define_placeholders()
     self.define_pred_graph()
     self.define_metrics()
+    self.define_pred_results()
     self.define_visuals()
 
   def feed(self):
@@ -159,12 +164,27 @@ class Tester(object):
 
     self.vis_iter += 1
 
+
+  def save_preds(self, preds):
+    """Save visuals.
+
+    Args:
+      preds: Dictionary of images.
+    """
+    preds['img_names'] = self.data_loader.src_image_names
+    save_file = os.path.join(
+        self.opts.results_eval_dir, 'iter_{}.mat'.format(self.pred_save_iter))
+    sio.savemat(save_file, preds)
+    self.pred_save_iter += 1
+
+
   def test(self):
     """Training routine.
     """
     log.info('Init Testing')
     seed = 0
     self.vis_iter = 0
+    self.pred_save_iter = 0
     tf.set_random_seed(seed)
     np.random.seed(seed)
 
@@ -192,6 +212,9 @@ class Tester(object):
       # for var in tf.model_variables():
         # print(var.name)
 
+      if not os.path.exists(opts.results_eval_dir):
+          os.makedirs(opts.results_eval_dir)
+
       # check if a previous checkpoint exists in current folder
       checkpoint = tf.train.latest_checkpoint(opts.checkpoint_dir)
       log.info('Previous checkpoint: ' + str(checkpoint))
@@ -206,6 +229,9 @@ class Tester(object):
       for step in range(1, opts.num_eval_iter+1):
         log.info('Iter : %d', step)
         fetches = [self.metrics, self.metrics_norm]
+        if opts.save_pred_results:
+          fetches.append(self.pred_results)
+
         if step % opts.visuals_freq == 0:
           fetches.append(self.visuals)
 
@@ -215,13 +241,18 @@ class Tester(object):
           self.metrics_data[k].append(results[0][k])
           self.metrics_norm_data[k].append(results[1][k])
 
+        if opts.save_pred_results:
+          self.save_preds(results[2])
+
         if step % opts.visuals_freq == 0:
-          self.save_visuals(results[2])
+          self.save_visuals(results[-1])
 
       self.write_summary_page()
-      for k in self.metrics_data:
-        self.metrics_data[k] = np.array(self.metrics_data[k])
-        self.metrics_norm_data[k] = np.array(self.metrics_norm_data[k])
 
-        print('Mean {}: {}'.format(
-            k, np.sum(self.metrics_data[k])/np.sum(self.metrics_norm_data[k])))
+      with open(os.path.join(opts.results_eval_dir, 'results.txt'), 'w') as eval_file:
+        for k in self.metrics_data:
+          self.metrics_data[k] = np.array(self.metrics_data[k])
+          self.metrics_norm_data[k] = np.array(self.metrics_norm_data[k])
+
+          eval_file.write('Mean {}: {}\n'.format(
+              k, np.sum(self.metrics_data[k])/np.sum(self.metrics_norm_data[k])))

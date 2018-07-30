@@ -17,6 +17,26 @@
 """Script for evaluating ldi predictor experiment.
 """
 
+# Sample synthetic data eval script:
+# CUDA_VISIBLE_DEVICES=1 python ldi_pred_eval.py  --exp_name=synth_ldi_nl2 --train_iter=500000  --dataset=synthetic --pascal_objects_dir=/data0/shubhtuls/code/lsi/cachedir/sbd/objects --sun_imgs_dir=/data1/shubhtuls/datasets/SUN2012pascalformat/JPEGImages --batch_size=4 --n_layers=2 --n_layerwise_steps=3 --use_unet --synth_ds_factor=2  --checkpoint_dir=/data0/shubhtuls/code/lsi/cachedir/snapshots  --trg_splat_downsampling=0.5 --data_split=test --num_eval_iter=250 --zbuf_scale=50 --visuals_freq=5
+
+# CUDA_VISIBLE_DEVICES=1 python ldi_pred_eval.py  --exp_name=synth_ldi_nl1 --train_iter=500000  --dataset=synthetic --pascal_objects_dir=/data0/shubhtuls/code/lsi/cachedir/sbd/objects --sun_imgs_dir=/data1/shubhtuls/datasets/SUN2012pascalformat/JPEGImages --batch_size=4 --n_layers=1 --n_layerwise_steps=3 --use_unet --synth_ds_factor=2  --checkpoint_dir=/data0/shubhtuls/code/lsi/cachedir/snapshots  --trg_splat_downsampling=0.5 --data_split=test --num_eval_iter=250 --zbuf_scale=50 --visuals_freq=5
+
+# CUDA_VISIBLE_DEVICES=1 python ldi_pred_eval.py  --exp_name=kitti_rcity_ldi_nl2 --train_iter=400000 --dataset=kitti --kitti_data_root=/data0/shubhtuls/datasets/kitti --kitti_dataset_variant=raw_city --batch_size=4 --n_layers=2 --img_width=768 --n_layerwise_steps=3 --use_unet --synth_ds_factor=2  --checkpoint_dir=/data0/shubhtuls/code/lsi/cachedir/snapshots  --trg_splat_downsampling=0.5 --data_split=val --num_eval_iter=250 --zbuf_scale=50 --splat_bdry_ignore=0.05
+
+# CUDA_VISIBLE_DEVICES=1 python ldi_pred_eval.py  --exp_name=kitti_rcity_ldi_nl1 --train_iter=400000 --dataset=kitti --kitti_data_root=/data0/shubhtuls/datasets/kitti --kitti_dataset_variant=raw_city --batch_size=4 --n_layers=1 --img_width=768 --n_layerwise_steps=3 --use_unet --synth_ds_factor=2  --checkpoint_dir=/data0/shubhtuls/code/lsi/cachedir/snapshots  --trg_splat_downsampling=0.5 --data_split=val --num_eval_iter=250 --zbuf_scale=50 --splat_bdry_ignore=0.05
+
+
+## Ablations
+# CUDA_VISIBLE_DEVICES=1 python ldi_pred_eval.py  --exp_name=synth_ldi_nl2_noindep --train_iter=500000  --dataset=synthetic --pascal_objects_dir=/data0/shubhtuls/code/lsi/cachedir/sbd/objects --sun_imgs_dir=/data1/shubhtuls/datasets/SUN2012pascalformat/JPEGImages --batch_size=4 --n_layers=2 --n_layerwise_steps=3 --use_unet --synth_ds_factor=2  --checkpoint_dir=/data0/shubhtuls/code/lsi/cachedir/snapshots  --trg_splat_downsampling=0.5 --data_split=test --num_eval_iter=250 --zbuf_scale=50 --visuals_freq=5
+
+# CUDA_VISIBLE_DEVICES=1 python ldi_pred_eval.py  --exp_name=synth_ldi_nl2_noscl --train_iter=500000  --dataset=synthetic --pascal_objects_dir=/data0/shubhtuls/code/lsi/cachedir/sbd/objects --sun_imgs_dir=/data1/shubhtuls/datasets/SUN2012pascalformat/JPEGImages --batch_size=4 --n_layers=2 --n_layerwise_steps=3 --use_unet --synth_ds_factor=2  --checkpoint_dir=/data0/shubhtuls/code/lsi/cachedir/snapshots  --trg_splat_downsampling=0.5 --data_split=test --num_eval_iter=250 --zbuf_scale=50 --visuals_freq=5 --splat_bdry_ignore=0.05
+
+# CUDA_VISIBLE_DEVICES=1 python ldi_pred_eval.py  --exp_name=synth_ldi_nl2_nolwise --train_iter=500000  --dataset=synthetic --pascal_objects_dir=/data0/shubhtuls/code/lsi/cachedir/sbd/objects --sun_imgs_dir=/data1/shubhtuls/datasets/SUN2012pascalformat/JPEGImages --batch_size=4 --n_layers=2 --n_layerwise_steps=0 --use_unet --synth_ds_factor=2  --checkpoint_dir=/data0/shubhtuls/code/lsi/cachedir/snapshots  --trg_splat_downsampling=0.5 --data_split=test --num_eval_iter=250 --zbuf_scale=50 --visuals_freq=5
+
+# CUDA_VISIBLE_DEVICES=1 python ldi_pred_eval.py  --exp_name=synth_ldi_nl2_nosmooth --train_iter=500000  --dataset=synthetic --pascal_objects_dir=/data0/shubhtuls/code/lsi/cachedir/sbd/objects --sun_imgs_dir=/data1/shubhtuls/datasets/SUN2012pascalformat/JPEGImages --batch_size=4 --n_layers=2 --n_layerwise_steps=3 --use_unet --synth_ds_factor=2  --checkpoint_dir=/data0/shubhtuls/code/lsi/cachedir/snapshots  --trg_splat_downsampling=0.5 --data_split=test --num_eval_iter=250 --zbuf_scale=50 --visuals_freq=5
+
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -313,6 +333,14 @@ class Tester(test_utils.Tester):
       self.visuals['trg_tex_pred_layer_%d' % l] = self.ldi_trg[0][l][b]
       self.visuals['trg_disp_pred_layer_%d' % l] = (
           self.ldi_trg[2][l][b, :, :, 0])/self.opts.max_disp
+
+
+  def define_pred_results(self):
+    self.pred_results['src_im'] = self.imgs_src
+    self.pred_results['trg_im'] = self.imgs_trg
+    self.pred_results['src_disp_pred'] = self.ldi_src[2][0][:, :, :, 0]
+    self.pred_results['trg_disp_pred'] = self.ldi_trg[2][0][:, :, :, 0]
+
 
   def define_metrics(self):
     """Metrics computation.

@@ -185,7 +185,7 @@ class DataLoader(object):
         for im_name in self.img_list_src:
           im_name_split = im_name.split('/')
           disp_name_src = os.path.join(
-              self.root_dir, 'spss_stereo_results', opts.data_split,
+              self.root_dir, 'spss_stereo_results',
               im_name_split[-4],
               im_name_split[-1][:-4] + '_left_initial_disparity.png')
           self.img_list_disp_src.append(disp_name_src)
@@ -364,6 +364,8 @@ class DataLoader(object):
       img_src, src_shape, img_trg, trg_shape, sample_ids, disp_src, disp_trg = batch
     else:
       img_src, src_shape, img_trg, trg_shape, sample_ids = batch
+
+    self.src_image_names = [self.img_list_src[sample_ids[b]] for b in range(bs)]
 
     instances_list = [list(self.forward_instance(
         img_src[b, :, :, :],
