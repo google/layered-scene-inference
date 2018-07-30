@@ -23,9 +23,6 @@
 # Sample kitti 1 layer experiment script:
 # python ldi_enc_dec.py --dataset=kitti --kitti_data_root=/data0/shubhtuls/datasets/kitti --kitti_dataset_variant=raw_city --batch_size=4 --n_layers=1 --use_unet=true --num_iter=500000 --disp_smoothness_wt=0.1 --exp_name=kitti_rcity_ldi_nl1 --n_layerwise_steps=3 --trg_splat_downsampling=0.5 --compose_splat_wt=1.0 --indep_splat_wt=1.0 --self_cons_wt=10 --splat_bdry_ignore=0.05 --img_width=768 --zbuf_scale=50 --log_freq=500 --checkpoint_dir=/data0/shubhtuls/code/lsi/cachedir/snapshots/
 
-# Sample scannet 2 layer experiment script:
-# CUDA_VISIBLE_DEVICES=1 python ldi_enc_dec.py --dataset=scannet --scannet_data_root=/data1/shubhtuls/datasets/ScanNet/data_imgs --batch_size=4 --n_layers=2 --use_unet=true --num_iter=500000 --disp_smoothness_wt=0.1 --exp_name=scannet_ldi_nl2 --n_layerwise_steps=3 --trg_splat_downsampling=0.5 --compose_splat_wt=1.0 --indep_splat_wt=1.0 --self_cons_wt=10 --splat_bdry_ignore=0.05 --img_width=512 --zbuf_scale=50 --log_freq=500
-
 # Sample synthetic 2 layer experiment script:
 # CUDA_VISIBLE_DEVICES=0 python ldi_enc_dec.py --dataset=synthetic --pascal_objects_dir=/data0/shubhtuls/code/lsi/cachedir/sbd/objects --sun_imgs_dir=/data1/shubhtuls/datasets/SUN2012pascalformat/JPEGImages --batch_size=4 --n_layers=2 --use_unet=true --num_iter=500000 --disp_smoothness_wt=0.1 --exp_name=synth_ldi_nl2 --n_layerwise_steps=3 --trg_splat_downsampling=0.5 --compose_splat_wt=1.0 --indep_splat_wt=1.0 --self_cons_wt=10 --splat_bdry_ignore=0.05 --zbuf_scale=50 --log_freq=500
 
@@ -36,9 +33,6 @@
 ### Ablations
 # (no indep loss):
 # CUDA_VISIBLE_DEVICES=0 python ldi_enc_dec.py --dataset=synthetic --pascal_objects_dir=/global/scratch/shubhtuls/cachedir/Datasets/sbd/objects --sun_imgs_dir=/global/scratch/shubhtuls/cachedir/SUN2012pascalformat/JPEGImages --batch_size=4 --n_layers=2 --use_unet=true --num_iter=500000 --disp_smoothness_wt=0.1 --exp_name=synth_ldi_nl2_noindep --n_layerwise_steps=3 --trg_splat_downsampling=0.5 --compose_splat_wt=1.0 --indep_splat_wt=0.0 --self_cons_wt=10 --splat_bdry_ignore=0.05 --zbuf_scale=50 --log_freq=500 --checkpoint_dir=/global/scratch/shubhtuls/code/lsi/cachedir/snapshots/
-
-# (no self-cons loss):
-# CUDA_VISIBLE_DEVICES=1 python ldi_enc_dec.py --dataset=synthetic --pascal_objects_dir=/global/scratch/shubhtuls/cachedir/Datasets/sbd/objects --sun_imgs_dir=/global/scratch/shubhtuls/cachedir/SUN2012pascalformat/JPEGImages --batch_size=4 --n_layers=2 --use_unet=true --num_iter=500000 --disp_smoothness_wt=0.1 --exp_name=synth_ldi_nl2_scl --n_layerwise_steps=3 --trg_splat_downsampling=0.5 --compose_splat_wt=1.0 --indep_splat_wt=1.0 --self_cons_wt=0.0 --splat_bdry_ignore=0.05 --zbuf_scale=50 --log_freq=500 --checkpoint_dir=/global/scratch/shubhtuls/code/lsi/cachedir/snapshots/
 
 # (no layerwise steps):
 # CUDA_VISIBLE_DEVICES=1 python ldi_enc_dec.py --dataset=synthetic --pascal_objects_dir=/global/scratch/shubhtuls/cachedir/Datasets/sbd/objects --sun_imgs_dir=/global/scratch/shubhtuls/cachedir/SUN2012pascalformat/JPEGImages --batch_size=4 --n_layers=2 --use_unet=true --num_iter=500000 --disp_smoothness_wt=0.1 --exp_name=synth_ldi_nl2_nolwise --n_layerwise_steps=0 --trg_splat_downsampling=0.5 --compose_splat_wt=1.0 --indep_splat_wt=1.0 --self_cons_wt=10 --splat_bdry_ignore=0.05 --zbuf_scale=50 --log_freq=500 --checkpoint_dir=/global/scratch/shubhtuls/code/lsi/cachedir/snapshots/
@@ -54,9 +48,7 @@ import numpy as np
 import tensorflow as tf
 from pyglib import app
 from pyglib import flags
-from lsi.data.flowers import data as flowers_data
 from lsi.data.kitti import data as kitti_data
-from lsi.data.scanNet import data as scannet_data
 from lsi.data.syntheticPlanes import data as synthetic_planes
 from lsi.geometry import ldi as ldi_utils
 from lsi.loss import loss
@@ -79,7 +71,7 @@ flags.DEFINE_boolean(
 ## Flags specific to select data loader
 flags.DEFINE_enum(
     'dataset', 'synthetic',
-    ['synthetic', 'flowers', 'kitti', 'scannet'], 'Dataset')
+    ['synthetic', 'kitti'], 'Dataset')
 flags.DEFINE_enum(
     'data_split', 'train', ['all', 'train', 'val', 'test'], 'Dataset split')
 flags.DEFINE_boolean(
@@ -108,12 +100,6 @@ flags.DEFINE_integer(
 flags.DEFINE_boolean(
     'synth_dl_eval_data', False, 'Output gt info for synth data')
 
-## Flags specific to flowers dataset
-flags.DEFINE_string(
-    'flowers_data_root',
-    'data/Flowers/Flowers_8bit_cropped',
-    'Directory where flowers data images are cameras are stored'
-)
 
 ## Flags specific to kitti dataset
 flags.DEFINE_string(
@@ -127,13 +113,6 @@ flags.DEFINE_enum(
 )
 flags.DEFINE_boolean(
     'kitti_dl_disparities', False, 'Output gt info for kitti disparities')
-
-## Flags specific to scannet dataset
-flags.DEFINE_string(
-    'scannet_data_root',
-    '/data1/shubhtuls/datasets/ScanNet/data_imgs',
-    'Directory where ScanNet data images are cameras are stored'
-)
 
 ## Flags related to the training (loss, CNN architecture etc.)
 flags.DEFINE_float('self_cons_wt', 1.0,
@@ -187,17 +166,10 @@ class Trainer(train_utils.Trainer):
     opts = self.opts
     if opts.dataset == 'synthetic':
       self.data_loader = synthetic_planes.DataLoader(opts)
-    elif opts.dataset == 'flowers':
-      self.data_loader = flowers_data.DataLoader(opts)
-      self.data_loader.define_queues()
     elif opts.dataset == 'kitti':
       self.data_loader = kitti_data.DataLoader(opts)
       self.data_loader.define_queues()
       self.data_loader.preload_calib_files()
-    elif opts.dataset == 'scannet':
-      self.data_loader = scannet_data.DataLoader(opts)
-      self.data_loader.define_queues()
-      # self.data_loader.preload_calib_files()
 
   def define_summary_ops(self):
     """Summary ops contruction.
@@ -256,15 +228,7 @@ class Trainer(train_utils.Trainer):
           tf.float32, [nl, bs, img_height, img_width, 1],
           name='trg_ldi_gt_disps')
 
-    if opts.dataset == 'flowers':
-      focal_disps, _ = nets.scale_predictor(
-          self.imgs_src, self.imgs_trg, self.rot_mat, self.trans_mat,
-          use_exp_activation=False)
-      tf.summary.histogram(
-          'focal_disps', focal_disps)
-      self.focal_disps = tf.reshape(focal_disps, [opts.batch_size, 1, 1, 1])
-    else:
-      self.focal_disps = None
+    self.focal_disps = None
 
     # Transform from trg to src frame
     self.inv_rot_mat = nn_helpers.transpose(self.rot_mat)
@@ -474,23 +438,11 @@ def main(_):
     if FLAGS.max_disp == 0:
       FLAGS.max_disp = 1.
 
-  elif FLAGS.dataset == 'flowers':
-    FLAGS.bg_layer_disp = 1e-2
-    FLAGS.depth_softmax_temp = 0.4
-    if FLAGS.max_disp == 0:
-      FLAGS.max_disp = 2.
-
   elif FLAGS.dataset == 'kitti':
     FLAGS.bg_layer_disp = 1e-3
     FLAGS.depth_softmax_temp = 0.4
     if FLAGS.max_disp == 0:
       FLAGS.max_disp = 0.4
-
-  elif FLAGS.dataset == 'scannet':
-    FLAGS.bg_layer_disp = 1e-2
-    FLAGS.depth_softmax_temp = 0.4
-    if FLAGS.max_disp == 0:
-      FLAGS.max_disp = 4.
 
   FLAGS.disp_vis_scale = 255/FLAGS.max_disp
   trainer = Trainer(FLAGS)

@@ -30,8 +30,6 @@
 ## Ablations
 # CUDA_VISIBLE_DEVICES=1 python ldi_pred_eval.py  --exp_name=synth_ldi_nl2_noindep --train_iter=500000  --dataset=synthetic --pascal_objects_dir=/data0/shubhtuls/code/lsi/cachedir/sbd/objects --sun_imgs_dir=/data1/shubhtuls/datasets/SUN2012pascalformat/JPEGImages --batch_size=4 --n_layers=2 --n_layerwise_steps=3 --use_unet --synth_ds_factor=2  --checkpoint_dir=/data0/shubhtuls/code/lsi/cachedir/snapshots  --trg_splat_downsampling=0.5 --data_split=test --num_eval_iter=250 --zbuf_scale=50 --visuals_freq=5
 
-# CUDA_VISIBLE_DEVICES=1 python ldi_pred_eval.py  --exp_name=synth_ldi_nl2_noscl --train_iter=500000  --dataset=synthetic --pascal_objects_dir=/data0/shubhtuls/code/lsi/cachedir/sbd/objects --sun_imgs_dir=/data1/shubhtuls/datasets/SUN2012pascalformat/JPEGImages --batch_size=4 --n_layers=2 --n_layerwise_steps=3 --use_unet --synth_ds_factor=2  --checkpoint_dir=/data0/shubhtuls/code/lsi/cachedir/snapshots  --trg_splat_downsampling=0.5 --data_split=test --num_eval_iter=250 --zbuf_scale=50 --visuals_freq=5 --splat_bdry_ignore=0.05
-
 # CUDA_VISIBLE_DEVICES=1 python ldi_pred_eval.py  --exp_name=synth_ldi_nl2_nolwise --train_iter=500000  --dataset=synthetic --pascal_objects_dir=/data0/shubhtuls/code/lsi/cachedir/sbd/objects --sun_imgs_dir=/data1/shubhtuls/datasets/SUN2012pascalformat/JPEGImages --batch_size=4 --n_layers=2 --n_layerwise_steps=0 --use_unet --synth_ds_factor=2  --checkpoint_dir=/data0/shubhtuls/code/lsi/cachedir/snapshots  --trg_splat_downsampling=0.5 --data_split=test --num_eval_iter=250 --zbuf_scale=50 --visuals_freq=5
 
 # CUDA_VISIBLE_DEVICES=1 python ldi_pred_eval.py  --exp_name=synth_ldi_nl2_nosmooth --train_iter=500000  --dataset=synthetic --pascal_objects_dir=/data0/shubhtuls/code/lsi/cachedir/sbd/objects --sun_imgs_dir=/data1/shubhtuls/datasets/SUN2012pascalformat/JPEGImages --batch_size=4 --n_layers=2 --n_layerwise_steps=3 --use_unet --synth_ds_factor=2  --checkpoint_dir=/data0/shubhtuls/code/lsi/cachedir/snapshots  --trg_splat_downsampling=0.5 --data_split=test --num_eval_iter=250 --zbuf_scale=50 --visuals_freq=5
@@ -46,7 +44,6 @@ import tensorflow as tf
 from pyglib import app
 from pyglib import flags
 from pyglib import log
-from lsi.data.flowers import data as flowers_data
 from lsi.data.kitti import data as kitti_data
 from lsi.data.syntheticPlanes import data as synthetic_planes
 from lsi.geometry import ldi as ldi_utils
@@ -68,7 +65,7 @@ flags.DEFINE_boolean(
 ## Flags specific to select data loader
 flags.DEFINE_enum(
     'dataset', 'synthetic',
-    ['synthetic', 'flowers', 'kitti'], 'Dataset')
+    ['synthetic', 'kitti'], 'Dataset')
 flags.DEFINE_enum(
     'data_split', 'val', ['all', 'train', 'val', 'test'], 'Dataset split')
 flags.DEFINE_boolean('debug_synth_texture', False,
@@ -97,18 +94,12 @@ flags.DEFINE_integer(
 flags.DEFINE_boolean(
     'synth_dl_eval_data', True, 'Output gt info for synth data')
 
-## Flags specific to flowers dataset
-flags.DEFINE_string(
-    'flowers_data_root',
-    'data/Flowers/Flowers_8bit_cropped',
-    'Directory where flowers data images are cameras are stored'
-)
 
-## Flags specific to flowers dataset
+## Flags specific to kitti dataset
 flags.DEFINE_string(
     'kitti_data_root',
     'data/KITTI',
-    'Directory where flowers data images are cameras are stored'
+    'Directory where kitti data images are cameras are stored'
 )
 flags.DEFINE_enum(
     'kitti_dataset_variant', 'raw_city', ['odom', 'mview', 'raw_city'],
@@ -153,9 +144,6 @@ class Tester(test_utils.Tester):
     opts = self.opts
     if opts.dataset == 'synthetic':
       self.data_loader = synthetic_planes.DataLoader(opts)
-    elif opts.dataset == 'flowers':
-      self.data_loader = flowers_data.DataLoader(opts)
-      self.data_loader.define_queues()
     elif opts.dataset == 'kitti':
       self.data_loader = kitti_data.DataLoader(opts)
       self.data_loader.define_queues()
@@ -226,13 +214,7 @@ class Tester(test_utils.Tester):
       self.disocclusion_mask_src = tf.equal(self.src_gt_disp, 0)
       self.disocclusion_mask_trg = tf.equal(self.trg_gt_disp, 0)
 
-    if opts.dataset == 'flowers':
-      focal_disps, _ = nets.scale_predictor(
-          self.imgs_src, self.imgs_trg, self.rot_mat, self.trans_mat,
-          use_exp_activation=False, is_training=True)
-      self.focal_disps = tf.reshape(focal_disps, [opts.batch_size, 1, 1, 1])
-    else:
-      self.focal_disps = None
+    self.focal_disps = None
 
     # Transform from trg to src frame
     self.inv_rot_mat = nn_helpers.transpose(self.rot_mat)
@@ -599,11 +581,6 @@ def main(_):
     FLAGS.bg_layer_disp = 2e-1
     if FLAGS.max_disp == 0:
       FLAGS.max_disp = 1.
-
-  elif FLAGS.dataset == 'flowers':
-    FLAGS.bg_layer_disp = 1e-2
-    if FLAGS.max_disp == 0:
-      FLAGS.max_disp = 2.
 
   elif FLAGS.dataset == 'kitti':
     FLAGS.bg_layer_disp = 1e-3
