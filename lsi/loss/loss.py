@@ -22,7 +22,6 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
-from lsi.loss import refinement as refine_utils
 from lsi.nnutils import helpers as nn_helpers
 
 
@@ -181,62 +180,3 @@ def zbuffer_composition_loss(
 
     return layerwise_cost
 
-
-def depth_composition_loss(
-    layer_imgs, layer_masks,
-    layer_disps, trg_imgs,
-    min_disp=1e-6, depth_softmax_temp=1, pre_loss_refine=False):
-  """Depth+Mask based composition loss between predictions and target.
-
-  First computes per-pixel layer assignment probs using depth+masks based
-  normalization, and then penalizes inconsistency in a weighed manner.
-  Assumes a default white background image (to penalize the ray escaping).
-
-  Args:
-    layer_imgs: are L X [...] X C, typically RGB images per layer
-    layer_masks: L X [...] X 1, indicating which layer pixels are valid
-    layer_disps: L X [...] X 1, laywewise per pixel disparity
-    trg_imgs: [...] X C targets
-    min_disp: Assumed disparity for the bg plane
-    depth_softmax_temp: Denominator for exponentiation of negative depths
-    pre_loss_refine: Whether to allow a refinement step before computing loss
-  Returns:
-    err: scalar error, (possibly refined) layer_imgs, masks and disps.
-  """
-  # add a layer with white color, disp=max_disp
-  shape_bg_img = layer_imgs.get_shape().as_list()
-  shape_bg_img[0] = 1
-
-  shape_bg_mask = layer_masks.get_shape().as_list()
-  shape_bg_mask[0] = 1
-
-  with tf.name_scope('depth_composition_loss'):
-    if pre_loss_refine:
-      refine_pred = 0.1*tf.tanh(refine_utils.refine_params(
-          tf.concat([layer_imgs, layer_masks], axis=-1),
-          trg_imgs, 8))
-      imgs_refined = refine_utils.corner_refine(
-          tf.concat([layer_imgs, layer_masks, layer_disps], axis=-1),
-          refine_pred)
-      layer_imgs, layer_masks, layer_disps = tf.split(
-          imgs_refined, [3, 1, 1], axis=4)
-
-    loss_vis_imgs = [layer_imgs, layer_masks, layer_disps]
-
-    bg_img = tf.ones(shape_bg_img)
-    bg_mask = tf.ones(shape_bg_mask)
-    bg_disp = tf.ones(shape_bg_mask)*min_disp
-
-    layer_imgs = tf.concat([layer_imgs, bg_img], 0)
-    layer_masks = tf.concat([layer_masks, bg_mask], 0)
-    layer_disps = tf.concat([layer_disps, bg_disp], 0)
-
-    layer_probs = nn_helpers.soft_z_buffering(
-        layer_masks, layer_disps, depth_softmax_temp=depth_softmax_temp)
-
-    layerwise_cost = tf.square(layer_imgs-trg_imgs)*layer_probs
-    layerwise_cost = tf.reduce_sum(layerwise_cost, axis=0)
-    layerwise_cost = 0.5*tf.reduce_mean(layerwise_cost)
-
-    loss_vis_imgs = [layer_probs] + loss_vis_imgs
-    return layerwise_cost, loss_vis_imgs
