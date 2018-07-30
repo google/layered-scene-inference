@@ -28,9 +28,9 @@ import re
 import scipy.misc
 import scipy.misc.pilutil
 import tensorflow as tf
-from pyglib import app
-from pyglib import gflags
-from pyglib import log
+from absl import app
+from absl import gflags
+from absl import logging as log
 from lsi.visualization import html_utils
 
 FLAGS = gflags.FLAGS

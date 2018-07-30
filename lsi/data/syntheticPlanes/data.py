@@ -22,7 +22,7 @@ from __future__ import print_function
 
 import numpy as np
 import tensorflow as tf
-from pyglib import log
+from absl import logging as log
 from lsi.data.syntheticPlanes import utils
 from lsi.geometry import homography
 from lsi.geometry import layers

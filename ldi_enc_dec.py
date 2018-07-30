@@ -46,8 +46,8 @@ from __future__ import print_function
 import os
 import numpy as np
 import tensorflow as tf
-from pyglib import app
-from pyglib import flags
+from absl import app
+from absl import flags
 from lsi.data.kitti import data as kitti_data
 from lsi.data.syntheticPlanes import data as synthetic_planes
 from lsi.geometry import ldi as ldi_utils

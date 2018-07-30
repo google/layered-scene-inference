@@ -25,8 +25,8 @@ import os
 import sys
 import pdb
 
-from pyglib import app
-from pyglib import flags
+from absl import app
+from absl import flags
 
 FLAGS = flags.FLAGS
 

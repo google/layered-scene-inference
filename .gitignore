@@ -1,5 +1,6 @@
-.ipynb
+*.ipynb
 *.pyc
 *.ipynb_checkpoints
+lsi/data/scanNet
 cachedir
 external

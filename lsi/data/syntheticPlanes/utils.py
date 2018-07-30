@@ -23,7 +23,7 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
-from pyglib import log
+from absl import logging as log
 
 
 def resize_instrinsic(intrinsic, scale_x, scale_y):

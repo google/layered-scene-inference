@@ -24,7 +24,7 @@ from __future__ import print_function
 import tensorflow as tf
 from tensorflow.contrib import slim
 from tensorflow.contrib.layers.python.layers import utils
-# from pyglib import log
+# from absl import logging as log
 from lsi.nnutils import helpers as nn_helpers
 
 

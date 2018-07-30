@@ -22,7 +22,7 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
-from pyglib import log
+from absl import logging as log
 
 
 def optimistic_restorer(save_file, vars_all=None):

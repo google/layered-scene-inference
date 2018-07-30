@@ -24,7 +24,7 @@ import os
 
 import numpy as np
 import tensorflow as tf
-from pyglib import log
+from absl import logging as log
 from lsi.nnutils import helpers as nn_helpers
 
 
