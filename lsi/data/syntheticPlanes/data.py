@@ -22,7 +22,6 @@ from __future__ import print_function
 
 import numpy as np
 import tensorflow as tf
-from absl import logging as log
 from lsi.data.syntheticPlanes import utils
 from lsi.geometry import homography
 from lsi.geometry import layers
@@ -243,18 +242,18 @@ class WorldGenerator(object):
     planes = planes[0:self.n_box_planes]
 
     # Box Texture Sampling
-    log.info('Box Texture Sampling.')
+    # log.info('Box Texture Sampling.')
     if n_box_planes > 0:
       masks_w[0:len(planes), :, :, :] = 1
       tex_imgs_bg, _ = self.tex_loader_bg.load()
       imgs_w[0:len(planes), :, :, :] = tex_imgs_bg[0:len(planes), :, :, :]
 
     # Foreground Objects sampling
-    log.info('Foreground Objects Sampling.')
+    # log.info('Foreground Objects Sampling.')
     n_obj = np.random.randint(self.n_obj_min, self.n_obj_max+1)
     if n_obj > 0:
       tex_imgs_obj, tex_shape_obj = self.tex_loader_obj.load()
-      log.info('max texture value: %f', np.max(tex_imgs_obj))
+      # log.info('max texture value: %f', np.max(tex_imgs_obj))
 
     for ix in range(self.n_obj_max):
       if ix < n_obj:
@@ -271,7 +270,7 @@ class WorldGenerator(object):
       planes.append(obj_plane)
 
     # Computing plane intrinsincs etc.
-    log.info('Plane Params.')
+    # log.info('Plane Params.')
 
     t_w2s = np.zeros((bs, 3, 1))
     rot_w2s = np.zeros((bs, 3, 3))
@@ -594,13 +593,13 @@ class DataLoader(object):
     ds_factor = self.opts.synth_ds_factor
     generator = self.generator
     renderer = self.renderer
-    log.info('Generating Layered World.')
+    # log.info('Generating Layered World.')
     rot_w2s, t_w2s, k_w, n_hat_w, a_w, imgs_w, masks_w = generator.forward()
 
     masks_w_bg = np.copy(masks_w)
     masks_w_bg[self.opts.n_box_planes:, :, :, :] = 0
 
-    log.info('Rendering Layered World.')
+    # log.info('Rendering Layered World.')
     renderer.set_feed_dict(
         k_w=k_w, rot_w2s=rot_w2s, t_w2s=t_w2s,
         n_hat_w=n_hat_w, a_w=a_w,
@@ -637,7 +636,7 @@ class DataLoader(object):
       img_t_bg = renderer.render_planes(rot_trg, trans_trg)
       disp_t_bg, _ = renderer.render_disps(rot_trg, trans_trg)
 
-    log.info('Rendering Finished.')
+    # log.info('Rendering Finished.')
 
     # p_s = R_s*p_w + t_s
     # p_t = R_t*p_w + t_t
