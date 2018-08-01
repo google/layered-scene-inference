@@ -27,43 +27,28 @@ from lsi.geometry import homography
 from lsi.geometry import layers
 
 
-def sample_views(nviews, mode='random'):
+def sample_views(nviews):
   """View sampling function.
 
   Args:
     nviews: Number of views to be sampled
-    mode: 'random' or 'circle'
-      'random': Generates views by moving the camera in the xy plane at z=0
-          and looking at some random point around z=[3.0,3.5]
-          and a random x,y
-      'circle': circles around a fixed point.
-          (useful for consistent visualizations of worlds)
   Returns:
     rot_trans_list: list of (rot, trans) tuples
   """
   rot_trans_list = []
-  if mode == 'random':
-    for _ in range(nviews):
-      x_cam = np.random.uniform(-0.5, 0.5)
-      y_cam = np.random.uniform(-0.5, 0.5)
-      z_cam = 0
+  for _ in range(nviews):
+    x_cam = np.random.uniform(-0.5, 0.5)
+    y_cam = np.random.uniform(-0.5, 0.5)
+    z_cam = 0
 
-      x_lookat = np.random.uniform(-0.5, 0.5)
-      y_lookat = np.random.uniform(-0.5, 0.5)
-      z_lookat = np.random.uniform(3.0, 3.5)
+    x_lookat = np.random.uniform(-0.5, 0.5)
+    y_lookat = np.random.uniform(-0.5, 0.5)
+    z_lookat = np.random.uniform(3.0, 3.5)
 
-      cam_pt = np.reshape(np.array([x_cam, y_cam, z_cam]), (3, 1))
-      lookat_pt = np.reshape(np.array([x_lookat, y_lookat, z_lookat]), (3, 1))
-      rot_mat = utils.lookat_rotation(lookat_pt - cam_pt)
-      rot_trans_list.append((rot_mat, -1*np.matmul(rot_mat, cam_pt)))
-
-  elif mode == 'circle':
-    lookat_pt = np.reshape(np.array([0, 0, 2]), (3, 1))
-    trans_list = utils.cam_trans_circle(
-        lookat_pt, theta_start=30, theta_end=-30, nshots=nviews)
-    for cam_pt in trans_list:
-      rot_mat = utils.lookat_rotation(lookat_pt - cam_pt)
-      rot_trans_list.append((rot_mat, -1*np.matmul(rot_mat, cam_pt)))
+    cam_pt = np.reshape(np.array([x_cam, y_cam, z_cam]), (3, 1))
+    lookat_pt = np.reshape(np.array([x_lookat, y_lookat, z_lookat]), (3, 1))
+    rot_mat = utils.lookat_rotation(lookat_pt - cam_pt)
+    rot_trans_list.append((rot_mat, -1*np.matmul(rot_mat, cam_pt)))
 
   return rot_trans_list
 
@@ -606,11 +591,11 @@ class DataLoader(object):
         imgs_w=imgs_w, masks_w=masks_w
     )
 
-    # (rot_src, trans_src) = sample_views(1, 'random')[0]
+    # (rot_src, trans_src) = sample_views(1)[0]
     rot_src = np.eye(3)
     trans_src = np.zeros((3, 1))
 
-    (rot_trg, trans_trg) = sample_views(1, 'random')[0]
+    (rot_trg, trans_trg) = sample_views(1)[0]
     # rot_trg = np.eye(3)
     # trans_trg = np.zeros((3, 1))
 

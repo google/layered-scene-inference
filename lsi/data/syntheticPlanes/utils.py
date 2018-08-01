@@ -149,19 +149,6 @@ def box_planes(extent):
   return planes
 
 
-def cam_trans_dolly(trans, nshots=10):
-  """Camera translations during a dolly shot.
-
-  Args:
-    trans: translation from (0, 0, 0) at end of shot
-    nshots: number of frames
-  Returns:
-    list of camera translations
-  """
-  alphas = np.linspace(0, 1, nshots)
-  return [trans*alphas[ix] for ix in range(nshots)]
-
-
 def _rot_y(theta):
   return np.array([
       [math.cos(theta), 0, math.sin(theta)],
@@ -176,23 +163,6 @@ def _rot_x(theta):
       [0, math.cos(theta), -math.sin(theta)],
       [0, math.sin(theta), math.cos(theta)]
   ])
-
-
-def cam_trans_circle(anchor, theta_start=0, theta_end=30, nshots=10):
-  """Camera translations during a z-axis circling shot.
-
-  Args:
-    anchor: point to rotate around
-    theta_start: initial angle around anchor
-    theta_end: final angle around anchor
-    nshots: number of frames
-  Returns:
-    list of camera translations
-  """
-  thetas = np.linspace(theta_start, theta_end, nshots)
-  anchor = np.copy(np.reshape(anchor, (3, 1)))
-  rots = [_rot_y(theta*math.pi/180) for theta in thetas]
-  return [anchor - np.matmul(r, anchor) for r in rots]
 
 
 def lookat_rotation(delta):
@@ -297,46 +267,3 @@ class QueuedRandomTextureLoader(object):
     """
     image_and_shape = self.tf_sess.run(self.image_and_shape)
     return image_and_shape[0], image_and_shape[1]
-
-
-class RandomTextureLoader(object):
-  """Loads a random image from the base_dir (or its subdirectories).
-  """
-
-  def __init__(self, base_dir, ext='.jpg'):
-    """Initialization function.
-
-    Args:
-      base_dir: directory where image files are present
-      ext: file extension for images
-    """
-    if not base_dir.endswith('/'):
-      base_dir += '/'
-    self.normalize_scale = 1.0
-    if ext == '.jpg':
-      self.normalize_scale = 1.0/255
-    self.img_list = []
-    self.base_dir = base_dir
-    for root, _, filenames in os.walk(base_dir):
-      for filename in fnmatch.filter(filenames, '*' + ext):
-        self.img_list.append(os.path.join(root, filename)[len(base_dir):])
-    return
-
-  def load(self, substr=None):
-    """Load a random image.
-
-    Args:
-      substr: pattern to filter image names
-    Returns:
-      A random image as a numpy array.
-    """
-    img_list = self.img_list
-    if substr is not None:
-      img_list = [im for im in img_list if substr in im]
-    img_ind = np.random.randint(len(img_list))
-    img = plt.imread(os.path.join(self.base_dir, img_list[img_ind]))
-    if len(np.shape(img)) == 2:
-      img = np.expand_dims(img, axis=2)
-    if np.shape(img)[2] == 1:
-      img = np.multiply(img, np.ones((1, 1, 3)))
-    return img*self.normalize_scale
