@@ -451,22 +451,6 @@ class Renderer(object):
     for key, val in kwargs.iteritems():
       self._feed_dict[phs[key]] = val
 
-  def render_layers(self, rot, t):
-    """Render target frame via layered representation in source frame.
-
-    This function first renders the layered representation of the
-    world in the source frame and then computes the target frame image
-    by transforming this layered representation.
-    Args:
-      rot: 3 X 3 rotation martix from source to target
-      t: 3 X 1 translation martix from source to target
-    Returns:
-      rendered H X W X 3 image
-    """
-    self.set_feed_dict(rot_s2t=rot, t_s2t=t)
-    return self._sess.run(
-        self.tf_res['source_layers_rendering'], feed_dict=self._feed_dict)
-
   def render_planes(self, rot, t):
     """Render target frame directly by rendering planes.
 

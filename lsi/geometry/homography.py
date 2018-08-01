@@ -174,28 +174,6 @@ def transform_plane_eqns(rot, t, n_hat, a):
     return n_hat_t, a_t
 
 
-def shift_plane_eqns(plane_shift, pred_planes):
-  """For every p on the original plane, p+plane_shift lies on the new plane.
-
-  Args:
-    plane_shift: relative rotation, are B X 1 X 3 points
-    pred_planes: [n_hat, a]
-        n_hat is [...] X 1 X 3, plane normal w.r.t source camera frame
-        a is [...] X 1 X 1, plane equation displacement
-  Returns:
-    shifted_planes: [n_hat_t, a_t] where
-        n_hat_t: [...] X 1 X 3, plane normal after shifting
-        a_t: [...] X 1 X 1, plane plane equation displacement after plane shift
-  """
-  n_hat = pred_planes[0]
-  a = pred_planes[1]
-  n_hat_t = n_hat
-  # plane_shift = tf.Print(plane_shift, [plane_shift])
-  a_t = a - tf.reduce_sum(plane_shift*n_hat, axis=-1, keep_dims=True)
-  # a_t = tf.Print(a_t, [a_t])
-  return [n_hat_t, a_t]
-
-
 def trg_disp_maps(pixel_coords_trg, k_t, rot, t, n_hat, a):
   """Computes pixelwise inverse depth for target pixels via plane equations.
 

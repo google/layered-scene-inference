@@ -88,18 +88,6 @@ def divide_safe(num, den, name=None):
   return tf.divide(num, den, name=name)
 
 
-def leaky_relu(x, alpha=0.2):
-  """Leaky ReLU.
-
-  Args:
-    x: input tensor
-    alpha: negative slope
-  Returns:
-    x_bar : post-activation tensor
-  """
-  return tf.nn.relu(x) - alpha*(tf.nn.relu(-x))
-
-
 def pixel_coords(bs, h, w):
   """Creates a bs X h X w X 3 tensor with (x,y,1) coord at each pixel.
 
@@ -173,35 +161,6 @@ def soft_z_buffering(layer_masks, layer_disps, depth_softmax_temp=1):
   probs_sum = tf.reduce_sum(layer_probs, axis=0, keep_dims=True)
   layer_probs = tf.divide(layer_probs, probs_sum)
   return layer_probs
-
-
-def enforce_inreasing_depth(
-    disp_deltas, use_prod_disp_step=False, base_disp_reduction=0):
-  """Compute decreasing, non-negative inverse depths based on disparity deltas.
-
-  Args:
-    disp_deltas: L X [...] disparity deltas
-        the 1st prediction represents the predicted inverse depth of 1st layer
-        the later [L-1] represent succesive reductions in inverse depth
-    use_prod_disp_step: disps of succesive layers vary multiplicatively
-    base_disp_reduction: min difference between succesive disps (unless < 0)
-  Returns:
-    disps_ldi: L X [..], non-negative inverse depths
-  """
-  disp_deltas = tf.nn.relu(disp_deltas)
-  n_layers = disp_deltas.get_shape().as_list()[0]
-  if n_layers == 1:
-    return disp_deltas
-  elif use_prod_disp_step:
-    disp_deltas = tf.clip_by_value(disp_deltas, 1e-3, 1)
-    return tf.cumprod(disp_deltas, axis=0, exclusive=False)
-  else:
-    disp_deltas += base_disp_reduction
-    disp_layer0, _ = tf.split(disp_deltas, [1, n_layers-1], axis=0)
-    disp_deltas_cumulative = tf.cumsum(disp_deltas, axis=0, exclusive=False)
-    disps_ldi = tf.nn.relu(
-        2*disp_layer0 - disp_deltas_cumulative - base_disp_reduction)
-    return disps_ldi
 
 
 def enforce_bg_occupied(ldi_masks):

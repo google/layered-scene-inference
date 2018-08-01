@@ -59,61 +59,6 @@ def event_prob(layer_masks):
     return layer_probs, escape_probs
 
 
-def ordered_composition_loss(
-    layer_imgs, layer_masks, layer_disps, trg_imgs,
-    min_depth=0.5, sigma=0.1):
-  """Order dependent loss between layer predictions and target image.
-
-  First computes per-pixel layer assignment probs using an ordered
-  multiplication, and then penalizes inconsistency in a weighed manner.
-  Assumes a default white background image (to penalize the ray escaping).
-  Args:
-    layer_imgs: are L X [...] X C, typically RGB images per layer
-    layer_masks: L X [...] X 1, indicating which layer pixels are valid
-    layer_disps: L X [...] X 1, disparity values
-    trg_imgs: [...] X C targets
-    min_depth: min-depth for view frustum
-    sigma: parameter to control softness of mask dependence on depth
-  Returns:
-    err: scalar error.
-  """
-  with tf.name_scope('ordered_composition_loss'):
-    # layer_masks = tf.Print(
-    #     layer_masks,
-    #     [tf.reduce_mean(layer_masks)], message='layer_masks mean')
-    layer_depths = nn_helpers.divide_safe(1, layer_disps)
-    layer_masks *= tf.sigmoid((layer_depths - min_depth)/sigma)
-    layer_probs, escape_probs = event_prob(layer_masks)
-    trg_imgs = tf.expand_dims(trg_imgs, axis=0)
-
-    # layer_probs = tf.Print(
-    #     layer_probs,
-    #     [tf.reduce_mean(layer_probs)], message='layer_probs mean')
-
-    # escape_probs = tf.Print(
-    #     escape_probs,
-    #     [tf.reduce_mean(escape_probs)], message='escape_probs mean')
-
-    escape_cost = tf.square(1-trg_imgs)*escape_probs
-    escape_cost = tf.reduce_mean(escape_cost, name='escape_cost')
-
-    # trg_imgs = tf.Print(
-    #     trg_imgs, [tf.reduce_mean(trg_imgs)], message='trg_imgs Mean')
-
-    #  escape_cost = tf.Print(
-    #      escape_cost, [escape_cost], message='Esc cost Mean')
-
-    layerwise_cost = tf.square(layer_imgs-trg_imgs)*layer_probs
-    layerwise_cost = tf.reduce_sum(layerwise_cost, axis=0)
-    layerwise_cost = tf.reduce_mean(layerwise_cost, name='layerwise_cost')
-    intermediates = [
-        layer_imgs, layer_masks,
-        layer_probs, escape_probs, escape_cost, layerwise_cost
-    ]
-
-    return 0.5*(escape_cost + layerwise_cost), intermediates
-
-
 def decreasing_disp_loss(layer_disps):
   """Penalizes if successive disparities across layers increase.
 
