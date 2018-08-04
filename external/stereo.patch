@@ -1,0 +1,239 @@
+diff --git a/SGMStereo.cpp b/SGMStereo.cpp
+index badd500..2152b90 100644
+--- a/SGMStereo.cpp
++++ b/SGMStereo.cpp
+@@ -101,7 +101,8 @@ void SGMStereo::setConsistencyThreshold(const int consistencyThreshold) {
+ 
+ void SGMStereo::compute(const png::image<png::rgb_pixel>& leftImage,
+ 						const png::image<png::rgb_pixel>& rightImage,
+-						float* disparityImage)
++						float* outputLeftDisparityImage,
++						float* outputRightDisparityImage)
+ {
+ 	initialize(leftImage, rightImage);
+ 
+@@ -115,7 +116,8 @@ void SGMStereo::compute(const png::image<png::rgb_pixel>& leftImage,
+ 
+ 	for (int y = 0; y < height_; ++y) {
+ 		for (int x = 0; x < width_; ++x) {
+-			disparityImage[width_*y + x] = static_cast<float>(leftDisparityImage[width_*y + x]/disparityFactor_);
++			outputLeftDisparityImage[width_ * y + x] = static_cast<float>(leftDisparityImage[width_*y + x]/disparityFactor_);
++			outputRightDisparityImage[width_ * y + x] = static_cast<float>(rightDisparityImage[width_*y + x] / disparityFactor_);
+ 		}
+ 	}
+ 
+diff --git a/SGMStereo.h b/SGMStereo.h
+index 5902ac6..09125e4 100644
+--- a/SGMStereo.h
++++ b/SGMStereo.h
+@@ -34,7 +34,8 @@ public:
+ 
+ 	void compute(const png::image<png::rgb_pixel>& leftImage,
+ 				 const png::image<png::rgb_pixel>& rightImage,
+-				 float* disparityImage);
++				 float* outputLeftDisparityImage,
++				 float* outputRightDisparityImage);
+ 
+ private:
+ 	void initialize(const png::image<png::rgb_pixel>& leftImage, const png::image<png::rgb_pixel>& rightImage);
+diff --git a/SPSStereo.cpp b/SPSStereo.cpp
+index f71e4f1..110cca1 100644
+--- a/SPSStereo.cpp
++++ b/SPSStereo.cpp
+@@ -111,6 +111,8 @@ void SPSStereo::compute(const int superpixelTotal,
+ 						const png::image<png::rgb_pixel>& leftImage,
+ 						const png::image<png::rgb_pixel>& rightImage,
+ 						png::image<png::gray_pixel_16>& segmentImage,
++						png::image<png::gray_pixel_16>& initialLeftDisparityImage,
++						png::image<png::gray_pixel_16>& initialRightDisparityImage,
+ 						png::image<png::gray_pixel_16>& disparityImage,
+ 						std::vector< std::vector<double> >& disparityPlaneParameters,
+ 						std::vector< std::vector<int> >& boundaryLabels)
+@@ -130,7 +132,7 @@ void SPSStereo::compute(const int superpixelTotal,
+ 	initializeSegment(superpixelTotal);
+ 	performSmoothingSegmentation();
+ 
+-	makeOutputImage(segmentImage, disparityImage);
++	makeOutputImage(segmentImage, initialLeftDisparityImage, initialRightDisparityImage, disparityImage);
+ 	makeSegmentBoundaryData(disparityPlaneParameters, boundaryLabels);
+ 
+ 	freeBuffer();
+@@ -139,7 +141,8 @@ void SPSStereo::compute(const int superpixelTotal,
+ 
+ void SPSStereo::allocateBuffer() {
+ 	inputLabImage_ = reinterpret_cast<float*>(malloc(width_*height_*3*sizeof(float)));
+-	initialDisparityImage_ = reinterpret_cast<float*>(malloc(width_*height_*sizeof(float)));
++	initialLeftDisparityImage_ = reinterpret_cast<float*>(malloc(width_*height_*sizeof(float)));
++	initialRightDisparityImage_ = reinterpret_cast<float*>(malloc(width_*height_*sizeof(float)));
+ 	labelImage_ = reinterpret_cast<int*>(malloc(width_*height_*sizeof(int)));
+ 	outlierFlagImage_ = reinterpret_cast<unsigned char*>(malloc(width_*height_*sizeof(unsigned char)));
+ 	boundaryFlagImage_ = reinterpret_cast<unsigned char*>(malloc(width_*height_*sizeof(unsigned char)));
+@@ -147,7 +150,8 @@ void SPSStereo::allocateBuffer() {
+ 
+ void SPSStereo::freeBuffer() {
+ 	free(inputLabImage_);
+-	free(initialDisparityImage_);
++	free(initialLeftDisparityImage_);
++	free(initialRightDisparityImage_);
+ 	free(labelImage_);
+ 	free(outlierFlagImage_);
+ 	free(boundaryFlagImage_);
+@@ -200,7 +204,7 @@ void SPSStereo::setLabImage(const png::image<png::rgb_pixel>& leftImage) {
+ 
+ void SPSStereo::computeInitialDisparityImage(const png::image<png::rgb_pixel>& leftImage, const png::image<png::rgb_pixel>& rightImage) {
+ 	SGMStereo sgm;
+-	sgm.compute(leftImage, rightImage, initialDisparityImage_);
++	sgm.compute(leftImage, rightImage, initialLeftDisparityImage_, initialRightDisparityImage_);
+ }
+ 
+ void SPSStereo::initializeSegment(const int superpixelTotal) {
+@@ -370,7 +374,7 @@ double SPSStereo::computePixelEnergy(const int x, const int y, const int segment
+ 	double distanceDisparity = inlierThresholdSquare;
+ 	double estimatedDisparity = segments_[segmentIndex].estimatedDisparity(x, y);
+ 	if (estimatedDisparity > 0) {
+-		distanceDisparity = (initialDisparityImage_[width_*y + x] - estimatedDisparity)*(initialDisparityImage_[width_*y + x] - estimatedDisparity);
++		distanceDisparity = (initialLeftDisparityImage_[width_*y + x] - estimatedDisparity)*(initialLeftDisparityImage_[width_*y + x] - estimatedDisparity);
+ 		if (distanceDisparity > inlierThresholdSquare) distanceDisparity = inlierThresholdSquare;
+ 	}
+ 
+@@ -398,7 +402,7 @@ void SPSStereo::changeSegmentLabel(const int x, const int y, const int newSegmen
+ 	labelImage_[width_*y + x] = newSegmentIndex;
+ 
+ 	double estimatedDisparity = segments_[newSegmentIndex].estimatedDisparity(x, y);
+-	double disparityError = fabs(initialDisparityImage_[width_*y + x] - estimatedDisparity);
++	double disparityError = fabs(initialLeftDisparityImage_[width_*y + x] - estimatedDisparity);
+ 	if (disparityError > inlierThreshold_) outlierFlagImage_[width_*y + x] = 255;
+ 	else outlierFlagImage_[width_*y + x] = 0;
+ 
+@@ -427,7 +431,7 @@ void SPSStereo::addNeighborBoundaryPixel(const int x, const int y, std::stack<in
+ }
+ 
+ void SPSStereo::initialFitDisparityPlane() {
+-	estimateDisparityPlaneRANSAC(initialDisparityImage_);
++	estimateDisparityPlaneRANSAC(initialLeftDisparityImage_);
+ 	float* interpolatedDisparityImage = reinterpret_cast<float*>(malloc(width_*height_*sizeof(float)));
+ 	interpolateDisparityImage(interpolatedDisparityImage);
+ 	estimateDisparityPlaneRANSAC(interpolatedDisparityImage);
+@@ -585,7 +589,7 @@ int SPSStereo::computeRequiredSamplingTotal(const int drawTotal, const int inlie
+ void SPSStereo::interpolateDisparityImage(float* interpolatedDisparityImage) const {
+ 	for (int y = 0; y < height_; ++y) {
+ 		for (int x = 0; x < width_; ++x) {
+-			interpolatedDisparityImage[width_*y + x] = initialDisparityImage_[width_*y + x];
++			interpolatedDisparityImage[width_*y + x] = initialLeftDisparityImage_[width_*y + x];
+ 		}
+ 	}
+ 
+@@ -656,14 +660,14 @@ void SPSStereo::initializeOutlierFlagImage() {
+ 	memset(outlierFlagImage_, 0, width_*height_);
+ 	for (int y = 0; y < height_; ++y) {
+ 		for (int x = 0; x < width_; ++x) {
+-			if (initialDisparityImage_[width_*y + x] == 0) {
++			if (initialLeftDisparityImage_[width_*y + x] == 0) {
+ 				outlierFlagImage_[width_*y + x] = 255;
+ 				continue;
+ 			}
+ 
+ 			int pixelSegmentIndex = labelImage_[width_*y + x];
+ 			double estimatedDisparity = segments_[pixelSegmentIndex].estimatedDisparity(x, y);
+-			if (fabs(initialDisparityImage_[width_*y + x] - estimatedDisparity) > inlierThreshold_) {
++			if (fabs(initialLeftDisparityImage_[width_*y + x] - estimatedDisparity) > inlierThreshold_) {
+ 				outlierFlagImage_[width_*y + x] = 255;
+ 			}
+ 		}
+@@ -693,8 +697,8 @@ void SPSStereo::buildSegmentConfiguration() {
+ 		for (int x = 0; x < width_; ++x) {
+ 			int pixelSegmentIndex = labelImage_[width_*y + x];
+ 			segments_[pixelSegmentIndex].appendSegmentPixel(x, y);
+-			if (initialDisparityImage_[width_*y + x] > 0 && outlierFlagImage_[width_*y + x] == 0) {
+-				segments_[pixelSegmentIndex].appendSegmentPixelWithDisparity(x, y, initialDisparityImage_[width_*y + x]);
++			if (initialLeftDisparityImage_[width_*y + x] > 0 && outlierFlagImage_[width_*y + x] == 0) {
++				segments_[pixelSegmentIndex].appendSegmentPixelWithDisparity(x, y, initialLeftDisparityImage_[width_*y + x]);
+ 			}
+ 
+ 			if (isHorizontalBoundary(x, y)) {
+@@ -927,13 +931,17 @@ void SPSStereo::estimateSmoothFitting() {
+ 	}
+ }
+ 
+-void SPSStereo::makeOutputImage(png::image<png::gray_pixel_16>& segmentImage, png::image<png::gray_pixel_16>& segmentDisparityImage) const {
++void SPSStereo::makeOutputImage(png::image<png::gray_pixel_16>& segmentImage, png::image<png::gray_pixel_16>& initialLeftDisparityImage, png::image<png::gray_pixel_16>& initialRightDisparityImage, png::image<png::gray_pixel_16>& segmentDisparityImage) const {
++	initialLeftDisparityImage.resize(width_, height_);
++	initialRightDisparityImage.resize(width_, height_);
+ 	segmentImage.resize(width_, height_);
+ 	segmentDisparityImage.resize(width_, height_);
+ 	for (int y = 0; y < height_; ++y) {
+ 		for (int x = 0; x < width_; ++x) {
+ 			int pixelSegmentIndex = labelImage_[width_*y + x];
+ 			segmentImage.set_pixel(x, y, pixelSegmentIndex);
++			initialLeftDisparityImage.set_pixel(x, y, outputDisparityFactor_ * initialLeftDisparityImage_[width_ * y + x] + 0.5);
++			initialRightDisparityImage.set_pixel(x, y, outputDisparityFactor_ * initialRightDisparityImage_[width_ * y + x] + 0.5);
+ 			double estimatedDisparity = segments_[pixelSegmentIndex].estimatedDisparity(x, y);
+ 			if (estimatedDisparity <= 0.0 || estimatedDisparity > 255.0) {
+ 				segmentDisparityImage.set_pixel(x, y, 0);
+diff --git a/SPSStereo.h b/SPSStereo.h
+index 681ebe2..67f4c9b 100644
+--- a/SPSStereo.h
++++ b/SPSStereo.h
+@@ -35,6 +35,8 @@ public:
+ 				 const png::image<png::rgb_pixel>& leftImage,
+ 				 const png::image<png::rgb_pixel>& rightImage,
+ 				 png::image<png::gray_pixel_16>& segmentImage,
++				 png::image<png::gray_pixel_16>& initialLeftDisparityImage,
++				 png::image<png::gray_pixel_16>& initialRightDisparityImage,
+ 				 png::image<png::gray_pixel_16>& disparityImage,
+ 				 std::vector< std::vector<double> >& disparityPlaneParameters,
+ 				 std::vector< std::vector<int> >& boundaryLabels);
+@@ -213,7 +215,7 @@ private:
+ 	void planeSmoothing();
+ 	void estimateBoundaryLabel();
+ 	void estimateSmoothFitting();
+-	void makeOutputImage(png::image<png::gray_pixel_16>& segmentImage, png::image<png::gray_pixel_16>& segmentDisparityImage) const;
++	void makeOutputImage(png::image<png::gray_pixel_16>& segmentImage, png::image<png::gray_pixel_16>& initialLeftDisparityImage, png::image<png::gray_pixel_16>& initialRightDisparityImage, png::image<png::gray_pixel_16>& segmentDisparityImage) const;
+ 	void makeSegmentBoundaryData(std::vector< std::vector<double> >& disparityPlaneParameters, std::vector< std::vector<int> >& boundaryLabels) const;
+ 
+ 
+@@ -234,7 +236,8 @@ private:
+ 	int width_;
+ 	int height_;
+ 	float* inputLabImage_;
+-	float* initialDisparityImage_;
++	float* initialLeftDisparityImage_;
++	float* initialRightDisparityImage_;
+ 
+ 	// Superpixel segments
+ 	int segmentTotal_;
+diff --git a/spsstereo_main.cpp b/spsstereo_main.cpp
+index 447fada..4f14ff8 100644
+--- a/spsstereo_main.cpp
++++ b/spsstereo_main.cpp
+@@ -51,10 +51,12 @@ int main(int argc, char* argv[]) {
+     sps.setPenaltyParameter(lambda_hinge, lambda_occ, lambda_pen);
+     
+ 	png::image<png::gray_pixel_16> segmentImage;
++	png::image<png::gray_pixel_16> initialLeftDisparityImage;
++	png::image<png::gray_pixel_16> initialRightDisparityImage;
+ 	png::image<png::gray_pixel_16> disparityImage;
+ 	std::vector< std::vector<double> > disparityPlaneParameters;
+ 	std::vector< std::vector<int> > boundaryLabels;
+-	sps.compute(superpixelTotal, leftImage, rightImage, segmentImage, disparityImage, disparityPlaneParameters, boundaryLabels);
++	sps.compute(superpixelTotal, leftImage, rightImage, segmentImage, initialLeftDisparityImage, initialRightDisparityImage, disparityImage, disparityPlaneParameters, boundaryLabels);
+ 
+ 	png::image<png::rgb_pixel> segmentBoundaryImage;
+ 	makeSegmentBoundaryImage(leftImage, segmentImage, boundaryLabels, segmentBoundaryImage);
+@@ -64,12 +66,16 @@ int main(int argc, char* argv[]) {
+ 	if (slashPosition != std::string::npos) outputBaseFilename.erase(0, slashPosition+1);
+ 	size_t dotPosition = outputBaseFilename.rfind('.');
+ 	if (dotPosition != std::string::npos) outputBaseFilename.erase(dotPosition);
++	std::string outputInitialLeftDisparityImageFilename = outputBaseFilename + "_left_initial_disparity.png";
++	std::string outputInitialRightDisparityImageFilename = outputBaseFilename + "_right_initial_disparity.png";
+ 	std::string outputDisparityImageFilename = outputBaseFilename + "_left_disparity.png";
+ 	std::string outputSegmentImageFilename = outputBaseFilename + "_segment.png";
+ 	std::string outputBoundaryImageFilename = outputBaseFilename + "_boundary.png";
+ 	std::string outputDisparityPlaneFilename = outputBaseFilename + "_plane.txt";
+ 	std::string outputBoundaryLabelFilename = outputBaseFilename + "_label.txt";
+ 
++	initialLeftDisparityImage.write(outputInitialLeftDisparityImageFilename);
++	initialRightDisparityImage.write(outputInitialRightDisparityImageFilename);
+ 	disparityImage.write(outputDisparityImageFilename);
+ 	segmentImage.write(outputSegmentImageFilename);
+ 	segmentBoundaryImage.write(outputBoundaryImageFilename);

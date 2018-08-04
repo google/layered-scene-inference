@@ -17,19 +17,6 @@
 """Script for running ldi predictor experiment.
 """
 
-# Sample kitti 2 layer experiment script:
-# CUDA_VISIBLE_DEVICES=1 python ldi_enc_dec.py --dataset=kitti --kitti_data_root=/data0/shubhtuls/datasets/kitti --kitti_dataset_variant=raw_city --batch_size=4 --n_layers=2 --use_unet=true --num_iter=500000 --disp_smoothness_wt=0.1 --exp_name=kitti_rcity_ldi_nl2 --n_layerwise_steps=3 --trg_splat_downsampling=0.5 --compose_splat_wt=1.0 --indep_splat_wt=1.0 --self_cons_wt=10 --splat_bdry_ignore=0.05 --img_width=768 --zbuf_scale=50 --log_freq=500 --checkpoint_dir=/data0/shubhtuls/code/lsi/cachedir/snapshots/
-
-# Sample kitti 1 layer experiment script:
-# python ldi_enc_dec.py --dataset=kitti --kitti_data_root=/data0/shubhtuls/datasets/kitti --kitti_dataset_variant=raw_city --batch_size=4 --n_layers=1 --use_unet=true --num_iter=500000 --disp_smoothness_wt=0.1 --exp_name=kitti_rcity_ldi_nl1 --n_layerwise_steps=3 --trg_splat_downsampling=0.5 --compose_splat_wt=1.0 --indep_splat_wt=1.0 --self_cons_wt=10 --splat_bdry_ignore=0.05 --img_width=768 --zbuf_scale=50 --log_freq=500 --checkpoint_dir=/data0/shubhtuls/code/lsi/cachedir/snapshots/
-
-# Sample synthetic 2 layer experiment script:
-# CUDA_VISIBLE_DEVICES=0 python ldi_enc_dec.py --dataset=synthetic --pascal_objects_dir=/data0/shubhtuls/code/lsi/cachedir/sbd/objects --sun_imgs_dir=/data1/shubhtuls/datasets/SUN2012pascalformat/JPEGImages --batch_size=4 --n_layers=2 --use_unet=true --num_iter=500000 --disp_smoothness_wt=0.1 --exp_name=synth_ldi_nl2 --n_layerwise_steps=3 --trg_splat_downsampling=0.5 --compose_splat_wt=1.0 --indep_splat_wt=1.0 --self_cons_wt=10 --splat_bdry_ignore=0.05 --zbuf_scale=50 --log_freq=500
-
-# Sample synthetic 1 layer experiment script:
-# CUDA_VISIBLE_DEVICES=0 python ldi_enc_dec.py --dataset=synthetic --pascal_objects_dir=/data0/shubhtuls/code/lsi/cachedir/sbd/objects --sun_imgs_dir=/data1/shubhtuls/datasets/SUN2012pascalformat/JPEGImages --batch_size=4 --n_layers=1 --use_unet=true --num_iter=500000 --disp_smoothness_wt=0.1 --exp_name=synth_ldi_nl1 --n_layerwise_steps=3 --trg_splat_downsampling=0.5 --compose_splat_wt=1.0 --indep_splat_wt=1.0 --self_cons_wt=10 --splat_bdry_ignore=0.05 --zbuf_scale=50 --log_freq=500
-
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
