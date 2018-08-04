@@ -30,16 +30,6 @@
 # CUDA_VISIBLE_DEVICES=0 python ldi_enc_dec.py --dataset=synthetic --pascal_objects_dir=/data0/shubhtuls/code/lsi/cachedir/sbd/objects --sun_imgs_dir=/data1/shubhtuls/datasets/SUN2012pascalformat/JPEGImages --batch_size=4 --n_layers=1 --use_unet=true --num_iter=500000 --disp_smoothness_wt=0.1 --exp_name=synth_ldi_nl1 --n_layerwise_steps=3 --trg_splat_downsampling=0.5 --compose_splat_wt=1.0 --indep_splat_wt=1.0 --self_cons_wt=10 --splat_bdry_ignore=0.05 --zbuf_scale=50 --log_freq=500
 
 
-### Ablations
-# (no indep loss):
-# CUDA_VISIBLE_DEVICES=0 python ldi_enc_dec.py --dataset=synthetic --pascal_objects_dir=/global/scratch/shubhtuls/cachedir/Datasets/sbd/objects --sun_imgs_dir=/global/scratch/shubhtuls/cachedir/SUN2012pascalformat/JPEGImages --batch_size=4 --n_layers=2 --use_unet=true --num_iter=500000 --disp_smoothness_wt=0.1 --exp_name=synth_ldi_nl2_noindep --n_layerwise_steps=3 --trg_splat_downsampling=0.5 --compose_splat_wt=1.0 --indep_splat_wt=0.0 --self_cons_wt=10 --splat_bdry_ignore=0.05 --zbuf_scale=50 --log_freq=500 --checkpoint_dir=/global/scratch/shubhtuls/code/lsi/cachedir/snapshots/
-
-# (no layerwise steps):
-# CUDA_VISIBLE_DEVICES=1 python ldi_enc_dec.py --dataset=synthetic --pascal_objects_dir=/global/scratch/shubhtuls/cachedir/Datasets/sbd/objects --sun_imgs_dir=/global/scratch/shubhtuls/cachedir/SUN2012pascalformat/JPEGImages --batch_size=4 --n_layers=2 --use_unet=true --num_iter=500000 --disp_smoothness_wt=0.1 --exp_name=synth_ldi_nl2_nolwise --n_layerwise_steps=0 --trg_splat_downsampling=0.5 --compose_splat_wt=1.0 --indep_splat_wt=1.0 --self_cons_wt=10 --splat_bdry_ignore=0.05 --zbuf_scale=50 --log_freq=500 --checkpoint_dir=/global/scratch/shubhtuls/code/lsi/cachedir/snapshots/
-
-# (no smoothness loss):
-# CUDA_VISIBLE_DEVICES=0 python ldi_enc_dec.py --dataset=synthetic --pascal_objects_dir=/global/scratch/shubhtuls/cachedir/Datasets/sbd/objects --sun_imgs_dir=/global/scratch/shubhtuls/cachedir/SUN2012pascalformat/JPEGImages --batch_size=4 --n_layers=2 --use_unet=true --num_iter=500000 --disp_smoothness_wt=0.0 --exp_name=synth_ldi_nl2_nosmooth --n_layerwise_steps=3 --trg_splat_downsampling=0.5 --compose_splat_wt=1.0 --indep_splat_wt=1.0 --self_cons_wt=10 --splat_bdry_ignore=0.05 --zbuf_scale=50 --log_freq=500 --checkpoint_dir=/global/scratch/shubhtuls/code/lsi/cachedir/snapshots/
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
