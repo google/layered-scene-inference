@@ -32,7 +32,7 @@ def html_page(content):
 
 
 def page_style():
-  """Html syle string.
+  """Html style string.
 
   Args:
   Returns:
@@ -72,4 +72,3 @@ def table_row(table_cols):
   for tc in table_cols:
     row_str += '<td>\n{}\n</td>\n'.format(tc)
   return row_str
-
