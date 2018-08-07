@@ -29,12 +29,12 @@ from absl import flags
 FLAGS = flags.FLAGS
 
 flags.DEFINE_string(
-    'kitti_data_root', '/data0/shubhtuls/datasets/kitti',
+    'kitti_data_root', '/datasets/kitti',
     'Directory where flowers data images are cameras are stored')
 
 flags.DEFINE_string(
     'spss_exec',
-    '/data0/shubhtuls/code/lsi/external/spsstereo_git_patch/spsstereo',
+    '/code/lsi/external/spsstereo_git_patch/spsstereo',
     'Directory where flowers data images are cameras are stored')
 
 

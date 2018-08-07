@@ -14,14 +14,14 @@
 
 
 % Directory where processed images of pascal objects should be stored
-pascal_objects_dir = '/data0/shubhtuls/code/lsi/cachedir/sbd/objects';
+pascal_objects_dir = '/code/lsi/cachedir/sbd/objects';
 
 % Directory where images of pascal objects are stored
-voc_dir = '/data1/shubhtuls/cachedir/Datasets/VOCdevkit';
+voc_dir = '/datasets/VOCdevkit';
 
 % Directory where pascal segmentation mask annotations are stored
 % Download these from https://people.eecs.berkeley.edu/~shubhtuls/cachedir/vpsKps/segkps.zip
-pascal_anno_dir =  '/data0/shubhtuls/code/lsi/cachedir/segkps';
+pascal_anno_dir =  '/code/lsi/cachedir/segkps';
 
 if(~exist(pascal_objects_dir,'dir'))
     mkdir(pascal_objects_dir);

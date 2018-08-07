@@ -36,7 +36,7 @@ def define_default_flags(flags):
   """
 
   ## Flags for logging and snapshotting
-  flags.DEFINE_string('checkpoint_dir', '/tmp/experiments/snapshots/',
+  flags.DEFINE_string('checkpoint_dir', '/code/lsi/cachedir/snapshots/',
                       'Root directory for tensorflow output files')
   flags.DEFINE_string(
       'pretrain_name', '',

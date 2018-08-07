@@ -53,9 +53,9 @@ flags.DEFINE_boolean('debug_synth_texture', False,
                      'Use gt LDI disps instead of predicted')
 
 ## Flags specific to synthetic data loader
-flags.DEFINE_string('pascal_objects_dir', 'data/sceneLayers/sbd/objects',
+flags.DEFINE_string('pascal_objects_dir', '/code/lsi/cachedir/sbd/objects',
                     'Directory where images of pascal objects are stored')
-flags.DEFINE_string('sun_imgs_dir', 'data/sceneLayers/SUN2012/Images',
+flags.DEFINE_string('sun_imgs_dir', '/datasets/SUN2012pascalformat/JPEGImages',
                     'Directory where SUN dataset images are stored')
 flags.DEFINE_integer('n_obj_min', 1,
                      'Min number of foreground layers in synthetic data')
@@ -69,7 +69,7 @@ flags.DEFINE_boolean('synth_dl_eval_data', False,
                      'Output gt info for synth data')
 
 ## Flags specific to kitti dataset
-flags.DEFINE_string('kitti_data_root', 'data/KITTI',
+flags.DEFINE_string('kitti_data_root', '/datasets/kitti',
                     'Directory where kitti data images are cameras are stored')
 flags.DEFINE_enum('kitti_dataset_variant', 'mview',
                   ['odom', 'mview', 'raw_city'], 'Kitti set to use')

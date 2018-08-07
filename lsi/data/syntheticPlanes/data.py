@@ -232,16 +232,7 @@ class WorldGenerator(object):
     a_w = np.expand_dims(a_w, axis=0)
     a_w = np.repeat(a_w, bs, axis=0)
 
-    # Box layout sampling
-    # xmin = -0.7 + np.random.uniform(-0.2, 0.2)
-    # ymin = -0.5 + np.random.uniform(-0.2, 0.2)
-    # zmin = 2.0 + np.random.uniform(-0.5, 0.5)
-
-    # xmax = 0.7 + np.random.uniform(-0.2, 0.2)
-    # ymax = 0.5 + np.random.uniform(-0.2, 0.2)
-    # zmax = 3.5  # keeping a fixed distance should resolve scale ambiguities
-
-    ## Using a fixed box, easier for debugging
+    # Box layout
     xmin = -0.7
     ymin = -0.5
     zmin = 2.0

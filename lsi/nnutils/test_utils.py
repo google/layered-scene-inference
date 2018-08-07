@@ -42,13 +42,13 @@ def define_default_flags(flags):
 
   ## Flags for logging and snapshotting
   flags.DEFINE_string('checkpoint_dir',
-                      '/data0/shubhtuls/code/lsi/cachedir/snapshots/',
+                      '/code/lsi/cachedir/snapshots/',
                       'Root directory for tensorflow output files')
   flags.DEFINE_string('results_vis_dir',
-                      '/data0/shubhtuls/code/lsi/cachedir/visualization/',
+                      '/code/lsi/cachedir/visualization/',
                       'Root directory for image output files')
   flags.DEFINE_string('results_eval_dir',
-                      '/data0/shubhtuls/code/lsi/cachedir/evaluation/',
+                      '/code/lsi/cachedir/evaluation/',
                       'Root directory for results')
   flags.DEFINE_string('exp_name', '', 'Name of previous net to pretrain from.')
   flags.DEFINE_integer(

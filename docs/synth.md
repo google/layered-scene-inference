@@ -22,20 +22,20 @@ cd lsi/data/syntheticPlanes
 We provide below sample scripts to train the 2 layer prediction model and the 1 layer baseline. You might need to change the paths to datasets, desired snapshot directory, and precomputed PASCAL VOC foreground objects in the flags.
 ```
 # 2 layer experiment
-python ldi_enc_dec.py --dataset=synthetic --pascal_objects_dir=/data0/shubhtuls/code/lsi/cachedir/sbd/objects --sun_imgs_dir=/data1/shubhtuls/datasets/SUN2012pascalformat/JPEGImages --batch_size=4 --n_layers=2 --use_unet=true --num_iter=500000 --disp_smoothness_wt=0.1 --exp_name=synth_ldi_nl2 --n_layerwise_steps=3 --trg_splat_downsampling=0.5 --compose_splat_wt=1.0 --indep_splat_wt=1.0 --self_cons_wt=10 --splat_bdry_ignore=0.05 --zbuf_scale=50 --log_freq=500 --checkpoint_dir=/data0/shubhtuls/code/lsi/cachedir/snapshots/
+python ldi_enc_dec.py --dataset=synthetic --pascal_objects_dir=/code/lsi/cachedir/sbd/objects --sun_imgs_dir=/datasets/SUN2012pascalformat/JPEGImages --batch_size=4 --n_layers=2 --use_unet=true --num_iter=500000 --disp_smoothness_wt=0.1 --exp_name=synth_ldi_nl2 --n_layerwise_steps=3 --trg_splat_downsampling=0.5 --compose_splat_wt=1.0 --indep_splat_wt=1.0 --self_cons_wt=10 --splat_bdry_ignore=0.05 --zbuf_scale=50 --log_freq=500 --checkpoint_dir=/code/lsi/cachedir/snapshots/
 
 # 1 layer experiment
-python ldi_enc_dec.py --dataset=synthetic --pascal_objects_dir=/data0/shubhtuls/code/lsi/cachedir/sbd/objects --sun_imgs_dir=/data1/shubhtuls/datasets/SUN2012pascalformat/JPEGImages --batch_size=4 --n_layers=1 --use_unet=true --num_iter=500000 --disp_smoothness_wt=0.1 --exp_name=synth_ldi_nl1 --n_layerwise_steps=3 --trg_splat_downsampling=0.5 --compose_splat_wt=1.0 --indep_splat_wt=1.0 --self_cons_wt=10 --splat_bdry_ignore=0.05 --zbuf_scale=50 --log_freq=500 --checkpoint_dir=/data0/shubhtuls/code/lsi/cachedir/snapshots/
+python ldi_enc_dec.py --dataset=synthetic --pascal_objects_dir=/code/lsi/cachedir/sbd/objects --sun_imgs_dir=/datasets/SUN2012pascalformat/JPEGImages --batch_size=4 --n_layers=1 --use_unet=true --num_iter=500000 --disp_smoothness_wt=0.1 --exp_name=synth_ldi_nl1 --n_layerwise_steps=3 --trg_splat_downsampling=0.5 --compose_splat_wt=1.0 --indep_splat_wt=1.0 --self_cons_wt=10 --splat_bdry_ignore=0.05 --zbuf_scale=50 --log_freq=500 --checkpoint_dir=/code/lsi/cachedir/snapshots/
 ```
 
 ### Evaluation
 To evaluate the trained models, run:
 ```
 # 2 layer experiment
-python ldi_pred_eval.py  --exp_name=synth_ldi_nl2 --train_iter=500000  --dataset=synthetic --pascal_objects_dir=/data0/shubhtuls/code/lsi/cachedir/sbd/objects --sun_imgs_dir=/data1/shubhtuls/datasets/SUN2012pascalformat/JPEGImages --batch_size=4 --n_layers=2 --n_layerwise_steps=3 --use_unet --synth_ds_factor=2  --checkpoint_dir=/data0/shubhtuls/code/lsi/cachedir/snapshots  --trg_splat_downsampling=0.5 --data_split=test --num_eval_iter=250 --zbuf_scale=50 --visuals_freq=5
+python ldi_pred_eval.py  --exp_name=synth_ldi_nl2 --train_iter=500000  --dataset=synthetic --pascal_objects_dir=/code/lsi/cachedir/sbd/objects --sun_imgs_dir=/datasets/SUN2012pascalformat/JPEGImages --batch_size=4 --n_layers=2 --n_layerwise_steps=3 --use_unet --synth_ds_factor=2  --checkpoint_dir=/code/lsi/cachedir/snapshots --results_vis_dir=/code/lsi/cachedir/visualization/ --results_eval_dir=/code/lsi/cachedir/evaluation/  --trg_splat_downsampling=0.5 --data_split=test --num_eval_iter=250 --zbuf_scale=50 --visuals_freq=5
 
 # 1 layer experiment
-python ldi_pred_eval.py  --exp_name=synth_ldi_nl1 --train_iter=500000  --dataset=synthetic --pascal_objects_dir=/data0/shubhtuls/code/lsi/cachedir/sbd/objects --sun_imgs_dir=/data1/shubhtuls/datasets/SUN2012pascalformat/JPEGImages --batch_size=4 --n_layers=1 --n_layerwise_steps=3 --use_unet --synth_ds_factor=2  --checkpoint_dir=/data0/shubhtuls/code/lsi/cachedir/snapshots  --trg_splat_downsampling=0.5 --data_split=test --num_eval_iter=250 --zbuf_scale=50 --visuals_freq=5
+python ldi_pred_eval.py  --exp_name=synth_ldi_nl1 --train_iter=500000  --dataset=synthetic --pascal_objects_dir=/code/lsi/cachedir/sbd/objects --sun_imgs_dir=/datasets/SUN2012pascalformat/JPEGImages --batch_size=4 --n_layers=1 --n_layerwise_steps=3 --use_unet --synth_ds_factor=2  --checkpoint_dir=/code/lsi/cachedir/snapshots --results_vis_dir=/code/lsi/cachedir/visualization/ --results_eval_dir=/code/lsi/cachedir/evaluation/  --trg_splat_downsampling=0.5 --data_split=test --num_eval_iter=250 --zbuf_scale=50 --visuals_freq=5
 ```
 
 ### Ablations
