@@ -13,7 +13,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Module for bilinear sampling.
 
 This implementation is based on
@@ -79,7 +78,7 @@ def bilinear(imgs, coords, compose=True):
     x1_safe = tf.clip_by_value(x1, zero, x_max)
     y1_safe = tf.clip_by_value(y1, zero, y_max)
 
-    ## bilinear interp weights
+    ## Bilinear interpolation weights
     wt_x0 = (x1 - coords_x)
     wt_x1 = (coords_x - x0)
     wt_y0 = (y1 - coords_y)
@@ -91,7 +90,7 @@ def bilinear(imgs, coords, compose=True):
     valid_y0 = tf.cast(tf.equal(y0, y0_safe), 'float32')
     valid_y1 = tf.cast(tf.equal(y1, y1_safe), 'float32')
 
-    ## indices in the flat image to sample from
+    ## Indices in the flat image from which to sample
     dim2 = tf.cast(inp_size[2], 'float32')
     dim1 = tf.cast(inp_size[2] * inp_size[1], 'float32')
     base = tf.reshape(
@@ -107,7 +106,7 @@ def bilinear(imgs, coords, compose=True):
     idx10 = x1_safe + base_y0
     idx11 = x1_safe + base_y1
 
-    ## sample from imgs
+    ## Sample from imgs
     imgs_flat = tf.reshape(imgs, tf.stack([-1, inp_size[3]]))
     imgs_flat = tf.cast(imgs_flat, 'float32')
     im00 = tf.reshape(tf.gather(imgs_flat, tf.cast(idx00, 'int32')), out_size)
@@ -153,8 +152,7 @@ def bilinear_wrapper(imgs, coords, compose=True):
       prod_init_dims *= init_dims[ix]
 
     imgs = tf.reshape(imgs, [prod_init_dims] + end_dims_img)
-    coords = tf.reshape(
-        coords, [prod_init_dims] + end_dims_coords)
+    coords = tf.reshape(coords, [prod_init_dims] + end_dims_coords)
 
     if compose:
       imgs_sampled = bilinear(imgs, coords, compose=compose)
@@ -206,7 +204,7 @@ def splat(src_image, tgt_coords, init_trg_image):
     x1_safe = tf.clip_by_value(x1, zero, x_max)
     y1_safe = tf.clip_by_value(y1, zero, y_max)
 
-    # bilinear splat weights, with points outside the grid having weight 0
+    # Bilinear splat weights, with points outside the grid having weight 0.
     wt_x0 = (x1 - x) * tf.cast(tf.equal(x0, x0_safe), 'float32')
     wt_x1 = (x - x0) * tf.cast(tf.equal(x1, x1_safe), 'float32')
     wt_y0 = (y1 - y) * tf.cast(tf.equal(y0, y0_safe), 'float32')
@@ -223,7 +221,7 @@ def splat(src_image, tgt_coords, init_trg_image):
     wt_bl *= tf.cast(tf.greater(wt_bl, 1e-3), 'float32')
     wt_br *= tf.cast(tf.greater(wt_br, 1e-3), 'float32')
 
-    # Four copies of the value image weighted by bilinear weights
+    # Four copies of the value image weighted by bilinear weights.
     values_tl = tf.reshape(src_image * wt_tl[:, :, :, None],
                            [batch, num_pixels_src, channels])
     values_tr = tf.reshape(src_image * wt_tr[:, :, :, None],
@@ -242,8 +240,8 @@ def splat(src_image, tgt_coords, init_trg_image):
     inds_br = tf.cast(
         tf.reshape(x1_safe + y1_safe * w_trg, [batch, -1]), 'int32')
 
-    init_trg_image = tf.reshape(
-        init_trg_image, [batch, num_pixels_trg, channels])
+    init_trg_image = tf.reshape(init_trg_image,
+                                [batch, num_pixels_trg, channels])
     tgt_image = []
     for c in range(channels):
       curr_tgt = init_trg_image[:, :, c]
@@ -278,9 +276,10 @@ def scatter_add_tensor(init, indices, updates):
     updates = tf.convert_to_tensor(updates)
     out_shape = tf.shape(init, out_type=indices.dtype)
     scattered_updates = tf.scatter_nd(indices, updates, out_shape)
-    with tf.control_dependencies(
-        [tf.assert_equal(
-            out_shape, tf.shape(scattered_updates, out_type=indices.dtype))]):
+    with tf.control_dependencies([
+        tf.assert_equal(out_shape,
+                        tf.shape(scattered_updates, out_type=indices.dtype))
+    ]):
       output = tf.add(init, scattered_updates)
     return output
 

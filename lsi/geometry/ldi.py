@@ -13,7 +13,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Module for layered depth images.
 
 An LDI will be represented as {textures, masks, disps} where
@@ -25,10 +24,10 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import tensorflow as tf
 from lsi.geometry import projection
 from lsi.geometry import sampling
 from lsi.nnutils import helpers as nn_helpers
+import tensorflow as tf
 
 
 def gradient(pred):
@@ -69,12 +68,19 @@ def disp_smoothness_loss(pred_disp):
   return dx2_loss + dxdy_loss + dydx_loss + dy2_loss
 
 
-def forward_splat(
-    ldi_src, pixel_coords_src, k_s, k_t, rot, t,
-    focal_disps=None,
-    compose_layers=True,
-    compute_trg_disp=False,
-    trg_downsampling=1, bg_layer_disp=0, max_disp=1, zbuf_scale=10):
+def forward_splat(ldi_src,
+                  pixel_coords_src,
+                  k_s,
+                  k_t,
+                  rot,
+                  t,
+                  focal_disps=None,
+                  compose_layers=True,
+                  compute_trg_disp=False,
+                  trg_downsampling=1,
+                  bg_layer_disp=0,
+                  max_disp=1,
+                  zbuf_scale=10):
   """Forward splat the ldi_src.
 
   Currently limited to output a target rendering of the same size as source.
@@ -104,21 +110,19 @@ def forward_splat(
   with tf.name_scope('forward_splat'):
     imgs_ldi, masks_ldi, disps_ldi = ldi_src
     n_layers, bs, h_s, w_s, nc = imgs_ldi.get_shape().as_list()
-    h_t = h_s*trg_downsampling
-    w_t = w_s*trg_downsampling
-    bg_wt = nn_helpers.zbuffer_weights(bg_layer_disp/max_disp, scale=zbuf_scale)
+    h_t = h_s * trg_downsampling
+    w_t = w_s * trg_downsampling
+    bg_wt = nn_helpers.zbuffer_weights(
+        bg_layer_disp / max_disp, scale=zbuf_scale)
     # bg_wt = tf.Print(bg_wt, [bg_wt, bg_layer_disp, max_disp])
     # start with a white canvas but with small weight
     trg_img = []
     trg_wts = []
     trg_disp = []
     for l in range(n_layers):
-      trg_img.append(
-          tf.ones([bs, h_t, w_t, nc], dtype='float32')*bg_wt)
-      trg_wts.append(
-          tf.ones([bs, h_t, w_t, 1], dtype='float32')*bg_wt)
-      trg_disp.append(
-          tf.zeros([bs, h_t, w_t, 1], dtype='float32')*bg_wt)
+      trg_img.append(tf.ones([bs, h_t, w_t, nc], dtype='float32') * bg_wt)
+      trg_wts.append(tf.ones([bs, h_t, w_t, 1], dtype='float32') * bg_wt)
+      trg_disp.append(tf.zeros([bs, h_t, w_t, 1], dtype='float32') * bg_wt)
 
     src2trg_mat = projection.forward_projection_matrix(k_s, k_t, rot, t)
 
@@ -139,7 +143,7 @@ def forward_splat(
         disps_trg += focal_disps
 
       pixel_wts = nn_helpers.zbuffer_weights(
-          disps_trg/max_disp, scale=zbuf_scale)*masks_ldi[l]
+          disps_trg / max_disp, scale=zbuf_scale) * masks_ldi[l]
 
       weighted_src_image = imgs_ldi[l] * pixel_wts
       weighted_disp_image = disps_trg * pixel_wts
