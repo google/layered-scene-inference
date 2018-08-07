@@ -13,7 +13,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Misc helper functions.
 """
 
@@ -21,8 +20,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import tensorflow as tf
 from absl import logging as log
+import tensorflow as tf
 
 
 def optimistic_restorer(save_file, vars_all=None):
@@ -39,20 +38,18 @@ def optimistic_restorer(save_file, vars_all=None):
     vars_all = tf.global_variables()
   reader = tf.train.NewCheckpointReader(save_file)
   saved_shapes = reader.get_variable_to_shape_map()
-  var_names = sorted([
-      (var.name, var.name.split(':')[0]
-      ) for var in vars_all if var.name.split(':')[0] in saved_shapes
-  ])
+  var_names = sorted([(var.name, var.name.split(':')[0])
+                      for var in vars_all
+                      if var.name.split(':')[0] in saved_shapes])
   var_names_new = sorted([
       var.name for var in vars_all if var.name.split(':')[0] not in saved_shapes
   ])
-  log.info('Number of new variables: ' + str(len(var_names_new)))
+  log.info('Number of new variables: %d', len(var_names_new))
   log.info(var_names_new)
   restore_vars = []
-  name2var = dict(zip(
-      [x.name.split(':')[0] for x in tf.global_variables()],
-      tf.global_variables()
-  ))
+  name2var = dict(
+      zip([x.name.split(':')[0] for x in tf.global_variables()],
+          tf.global_variables()))
   with tf.variable_scope('', reuse=True):
     for var_name, saved_var_name in var_names:
       curr_var = name2var[saved_var_name]
@@ -60,7 +57,7 @@ def optimistic_restorer(save_file, vars_all=None):
       if var_shape == saved_shapes[saved_var_name]:
         restore_vars.append(curr_var)
       else:
-        log.info('Different shape than saved: ' + var_name)
+        log.info('Different shape than saved: %s', var_name)
   restorer = tf.train.Saver(restore_vars)
   return restorer
 
@@ -84,7 +81,7 @@ def transpose(rot):
 
 def divide_safe(num, den, name=None):
   eps = 1e-8
-  den += eps*tf.cast(tf.equal(den, 0), 'float32')
+  den += eps * tf.cast(tf.equal(den, 0), 'float32')
   return tf.divide(num, den, name=name)
 
 
@@ -109,9 +106,9 @@ def pixel_coords(bs, h, w):
 
     # subtracting 0.5 so that pixel centres correspond to 0.5
     # for example, the top left pixel centre is at (0.5, 0.5)
-    ys = ones_b*range_h*ones_w - 0.5
-    xs = ones_b*ones_h*range_w - 0.5
-    ones = ones_b*ones_h*ones_w
+    ys = ones_b * range_h * ones_w - 0.5
+    xs = ones_b * ones_h * range_w - 0.5
+    ones = ones_b * ones_h * ones_w
 
     return tf.stack([xs, ys, ones], axis=3)
 
@@ -153,7 +150,7 @@ def soft_z_buffering(layer_masks, layer_disps, depth_softmax_temp=1):
   eps = 1e-8
   layer_disps = tf.nn.relu(layer_disps)
   layer_depths = divide_safe(1, layer_disps)
-  log_depth_probs = -layer_depths/depth_softmax_temp
+  log_depth_probs = -layer_depths / depth_softmax_temp
 
   log_layer_probs = tf.log(layer_masks + eps) + log_depth_probs
   log_layer_probs -= tf.reduce_max(log_layer_probs, axis=0, keep_dims=True)
@@ -173,10 +170,10 @@ def enforce_bg_occupied(ldi_masks):
   """
   n_layers = ldi_masks.get_shape().as_list()[0]
   if n_layers == 1:
-    return ldi_masks*0 + 1
+    return ldi_masks * 0 + 1
   else:
-    masks_fg, masks_bg = tf.split(ldi_masks, [n_layers-1, 1], axis=0)
-    masks_bg = masks_bg*0 + 1
+    masks_fg, masks_bg = tf.split(ldi_masks, [n_layers - 1, 1], axis=0)
+    masks_bg = masks_bg * 0 + 1
     return tf.concat([masks_fg, masks_bg], axis=0)
 
 
@@ -192,5 +189,5 @@ def zbuffer_weights(disps, scale=50):
   pos_disps = tf.cast(tf.greater(disps, 0), tf.float32)
   disps = tf.clip_by_value(disps, 0, 1)
   disps -= 0.5  # subtracting a constant just divides all weights by a fraction
-  wts = tf.exp(disps*scale)*pos_disps
+  wts = tf.exp(disps * scale) * pos_disps
   return wts

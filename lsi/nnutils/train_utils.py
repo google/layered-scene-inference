@@ -13,19 +13,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-"""Generic Training Utils.
+"""Generic training utils.
 """
 
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+
 import os
 
-import numpy as np
-import tensorflow as tf
 from absl import logging as log
 from lsi.nnutils import helpers as nn_helpers
+import numpy as np
+import tensorflow as tf
 
 
 def define_default_flags(flags):
@@ -114,16 +114,18 @@ class Trainer(object):
           self.total_loss, var_list=train_vars)
       self.train_op = optim.apply_gradients(self.grads_and_vars)
       self.global_step = tf.Variable(0, name='global_step', trainable=False)
-      self.incr_global_step = tf.assign(self.global_step, self.global_step+1)
+      self.incr_global_step = tf.assign(self.global_step, self.global_step + 1)
 
   def grad_debug_op(self):
     """Defines gradient debugging ops."""
     with tf.name_scope('grad_debug_op'):
       self.mean_grads = [
           tf.Print(
-              tf.reduce_mean(gv[0]),
-              [tf.reduce_mean(gv[0])], message=gv[1].name
-          ) for gv in self.grads_and_vars if gv[0] is not None]
+              tf.reduce_mean(gv[0]), [tf.reduce_mean(gv[0])],
+              message=gv[1].name)
+          for gv in self.grads_and_vars
+          if gv[0] is not None
+      ]
 
       debug_vars = {}
 
@@ -137,8 +139,9 @@ class Trainer(object):
           tf.Print(
               tf.reduce_mean(grad_debug_vars[ix]),
               [tf.reduce_mean(grad_debug_vars[ix])],
-              message=debug_var_names[ix] + '_grad: '
-          ) for ix in range(len(debug_vars)) if grad_debug_vars[ix] is not None
+              message=debug_var_names[ix] + '_grad: ')
+          for ix in range(len(debug_vars))
+          if grad_debug_vars[ix] is not None
       ]
 
   def feed(self):
@@ -164,38 +167,28 @@ class Trainer(object):
     self.define_summary_ops()
     # check_op = tf.add_check_numerics_ops()
     with tf.name_scope('parameter_count'):
-      parameter_count = tf.reduce_sum([
-          tf.reduce_prod(tf.shape(v)) for v in tf.trainable_variables()
-      ])
+      parameter_count = tf.reduce_sum(
+          [tf.reduce_prod(tf.shape(v)) for v in tf.trainable_variables()])
       var_list = [var for var in tf.model_variables()]
 
-      self.saver = tf.train.Saver(
-          var_list + [self.global_step],
-          max_to_keep=10)
+      self.saver = tf.train.Saver(var_list + [self.global_step], max_to_keep=10)
 
       if opts.pretrain_name:
-        self.checkpoint = os.path.join(
-            opts.checkpoint_dir, '..',
-            opts.pretrain_name,
-            'model-{}'.format(opts.pretrain_iter))
+        self.checkpoint = os.path.join(opts.checkpoint_dir, '..',
+                                       opts.pretrain_name, 'model-{}'.format(
+                                           opts.pretrain_iter))
 
         self.restorer = nn_helpers.optimistic_restorer(
             self.checkpoint, var_list + [self.global_step])
 
     sv = tf.train.Supervisor(
-        logdir=opts.checkpoint_dir,
-        save_summaries_secs=0,
-        saver=None
-    )
+        logdir=opts.checkpoint_dir, save_summaries_secs=0, saver=None)
     with sv.managed_session() as sess:
-      # print('Trainable variables: ')
-      # for var in tf.trainable_variables():
-      #   print(var.name)
       print('parameter_count =', sess.run(parameter_count))
 
-      # check if a previous checkpoint exists in current folder
+      # Check if a previous checkpoint exists in current folder.
       checkpoint = tf.train.latest_checkpoint(opts.checkpoint_dir)
-      log.info('Previous checkpoint: ' + str(checkpoint))
+      log.info('Previous checkpoint: %s', str(checkpoint))
       if checkpoint is not None:
         log.info('Restoring')
         print('Resume training from previous checkpoint: %s' % checkpoint)
@@ -204,10 +197,9 @@ class Trainer(object):
       if (checkpoint is None) and opts.pretrain_name:
         log.info('Restoring')
         print('Resume training from pretrained net: %s' % self.checkpoint)
-        # self.saver.restore(sess, self.checkpoint)
         self.restorer.restore(sess, self.checkpoint)
 
-      for step in range(1, opts.num_iter+1):
+      for step in range(1, opts.num_iter + 1):
         log.info('Iter : %d', step)
         fetches = {
             'train': self.train_op,
@@ -236,9 +228,8 @@ class Trainer(object):
     model_name = 'model'
     print(' [*] Saving checkpoint to %s...' % checkpoint_dir)
     if step == 'latest':
-      self.saver.save(
-          sess, os.path.join(checkpoint_dir, model_name + '.latest'))
+      self.saver.save(sess, os.path.join(checkpoint_dir,
+                                         model_name + '.latest'))
     else:
       self.saver.save(
-          sess, os.path.join(checkpoint_dir, model_name),
-          global_step=step)
+          sess, os.path.join(checkpoint_dir, model_name), global_step=step)

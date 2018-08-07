@@ -13,7 +13,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """CNN definition helpers.
 """
 
@@ -21,11 +20,10 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from lsi.nnutils import helpers as nn_helpers
 import tensorflow as tf
 from tensorflow.contrib import slim
 from tensorflow.contrib.layers.python.layers import utils
-# from absl import logging as log
-from lsi.nnutils import helpers as nn_helpers
 
 
 def encoder_simple(inp_img, nz=1000, is_training=True, reuse=False):
@@ -66,14 +64,14 @@ def encoder_simple(inp_img, nz=1000, is_training=True, reuse=False):
       cnv7b = slim.conv2d(cnv7, 512, [3, 3], stride=1, scope='cnv7b')
       cnv7b_flat = slim.flatten(cnv7b, scope='cnv7b_flat')
       enc = slim.stack(
-          cnv7b_flat, slim.fully_connected, [2*nz, nz, nz], scope='fc')
+          cnv7b_flat, slim.fully_connected, [2 * nz, nz, nz], scope='fc')
 
     end_points = utils.convert_collection_to_dict(end_points_collection)
     return enc, end_points
 
 
-def decoder_simple(
-    feat, nconv=7, is_training=True, skip_feat=None, reuse=False):
+def decoder_simple(feat, nconv=7, is_training=True, skip_feat=None,
+                   reuse=False):
   """Creates a simple encoder CNN.
 
   Args:
@@ -89,7 +87,7 @@ def decoder_simple(
   batch_norm_params = {'is_training': is_training}
   n_filters = [32, 64, 128, 256]
   if nconv > 4:
-    for _ in range(nconv-4):
+    for _ in range(nconv - 4):
       n_filters.append(512)
 
   with tf.variable_scope('decoder', reuse=reuse) as sc:
@@ -104,21 +102,25 @@ def decoder_simple(
       if feat.get_shape().ndims == 2:
         feat = tf.expand_dims(tf.expand_dims(feat, 1), 1)
       for nc in range(nconv, 0, -1):
-        n_filt = n_filters[nc-1]
+        n_filt = n_filters[nc - 1]
         feat = slim.conv2d_transpose(
-            feat, n_filt, [4, 4], stride=2, scope='upcnv'+str(nc))
+            feat, n_filt, [4, 4], stride=2, scope='upcnv' + str(nc))
         if (nc > 1) and (skip_feat is not None):
-          feat = tf.concat([feat, skip_feat[-nc+1]], axis=3)
+          feat = tf.concat([feat, skip_feat[-nc + 1]], axis=3)
         feat = slim.conv2d(
-            feat, n_filt, [3, 3], stride=1, scope='upcnv'+str(nc)+'b')
+            feat, n_filt, [3, 3], stride=1, scope='upcnv' + str(nc) + 'b')
 
     end_points = utils.convert_collection_to_dict(end_points_collection)
     return feat, end_points
 
 
-def pixelwise_predictor(
-    feat, nc=3, n_layers=1, n_layerwise_steps=0,
-    skip_feat=None, reuse=False, is_training=True):
+def pixelwise_predictor(feat,
+                        nc=3,
+                        n_layers=1,
+                        n_layerwise_steps=0,
+                        skip_feat=None,
+                        reuse=False,
+                        is_training=True):
   """Predicts texture images and probilistic masks.
 
   Args:
@@ -142,10 +144,13 @@ def pixelwise_predictor(
         outputs_collections=end_points_collection):
       preds = []
       for l in range(n_layers):
-        with tf.variable_scope('upsample_' +  str(l), reuse=reuse):
+        with tf.variable_scope('upsample_' + str(l), reuse=reuse):
           feat_l, _ = decoder_simple(
-              feat, nconv=n_layerwise_steps, skip_feat=skip_feat,
-              reuse=reuse, is_training=is_training)
+              feat,
+              nconv=n_layerwise_steps,
+              skip_feat=skip_feat,
+              reuse=reuse,
+              is_training=is_training)
           pred = slim.conv2d(
               feat_l, nc, [3, 3], stride=1, scope='pred_' + str(l))
           preds.append(pred)
@@ -156,9 +161,13 @@ def pixelwise_predictor(
       return preds, end_points
 
 
-def ldi_predictor(
-    feat, n_layers=1, reuse=False,
-    n_layerwise_steps=0, skip_feat=None, pred_masks=False, is_training=True):
+def ldi_predictor(feat,
+                  n_layers=1,
+                  reuse=False,
+                  n_layerwise_steps=0,
+                  skip_feat=None,
+                  pred_masks=False,
+                  is_training=True):
   """Predicts ldi : [textures, masks, disps].
 
   Args:
@@ -176,13 +185,17 @@ def ldi_predictor(
         textures : L X B X H X W X 1
   """
   with tf.variable_scope('ldi_tex_disp', reuse=reuse):
-    nc = 3+1
+    nc = 3 + 1
     if pred_masks:
       nc += 1
     tex_disp_pred, _ = pixelwise_predictor(
-        feat, nc=nc, n_layers=n_layers,
-        n_layerwise_steps=n_layerwise_steps, skip_feat=skip_feat,
-        reuse=reuse, is_training=is_training)
+        feat,
+        nc=nc,
+        n_layers=n_layers,
+        n_layerwise_steps=n_layerwise_steps,
+        skip_feat=skip_feat,
+        reuse=reuse,
+        is_training=is_training)
     if pred_masks:
       tex_pred, masks_ldi, disps_pred = tf.split(
           tex_disp_pred, [3, 1, 1], axis=4)
@@ -195,9 +208,12 @@ def ldi_predictor(
     return ldi
 
 
-def encoder_decoder_simple(
-    inp_img, nz=1000, nupconv=8, is_training=True,
-    reuse=False, nl_diff_enc_dec=0):
+def encoder_decoder_simple(inp_img,
+                           nz=1000,
+                           nupconv=8,
+                           is_training=True,
+                           reuse=False,
+                           nl_diff_enc_dec=0):
   """Creates a simple encoder-decoder CNN.
 
   Args:
@@ -216,14 +232,20 @@ def encoder_decoder_simple(
   feat, enc_intermediate = encoder_simple(
       inp_img, is_training=is_training, nz=nz, reuse=reuse)
   feat_dec, dec_intermediate = decoder_simple(
-      feat, nconv=nupconv-nl_diff_enc_dec, is_training=is_training, reuse=reuse)
+      feat,
+      nconv=nupconv - nl_diff_enc_dec,
+      is_training=is_training,
+      reuse=reuse)
   enc_dec_int = dict(enc_intermediate, **dec_intermediate)
   skip_feat = None
   return feat, feat_dec, skip_feat, enc_dec_int
 
 
-def encoder_decoder_unet(
-    inp_img, nz=1000, is_training=True, reuse=False, nl_diff_enc_dec=0):
+def encoder_decoder_unet(inp_img,
+                         nz=1000,
+                         is_training=True,
+                         reuse=False,
+                         nl_diff_enc_dec=0):
   """Creates a Unet-like CNN with + features extracted from bottleneck.
 
   Args:
@@ -266,7 +288,7 @@ def encoder_decoder_unet(
       ## features via fc layers on bottleneck
       cnv7b_flat = slim.flatten(cnv7b, scope='cnv7b_flat')
       feat = slim.stack(
-          cnv7b_flat, slim.fully_connected, [2*nz, nz, nz], scope='fc')
+          cnv7b_flat, slim.fully_connected, [2 * nz, nz, nz], scope='fc')
 
       feats_dec = []  # decoded features at different layers
       skip_feat = []  # initial layer features useful for layerwise steps
@@ -323,4 +345,4 @@ def encoder_decoder_unet(
       feats_dec.append(icnv1)
 
       end_points = utils.convert_collection_to_dict(end_points_collection)
-      return feat, feats_dec[-1-nl_diff_enc_dec], skip_feat, end_points
+      return feat, feats_dec[-1 - nl_diff_enc_dec], skip_feat, end_points

@@ -13,25 +13,24 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-"""Generic Testing Utils.
+"""Generic testing utils.
 """
 
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+
 import os
 
-import matplotlib.pyplot as plt
-import numpy as np
-import scipy.misc
-import scipy.misc.pilutil
-import scipy.io as sio
-
-import tensorflow as tf
 from absl import logging as log
 from lsi.nnutils import helpers as nn_helpers
 from lsi.visualization import html_utils
+import matplotlib.pyplot as plt
+import numpy as np
+import scipy.io as sio
+import scipy.misc
+import scipy.misc.pilutil
+import tensorflow as tf
 
 
 def define_default_flags(flags):
@@ -42,15 +41,16 @@ def define_default_flags(flags):
   """
 
   ## Flags for logging and snapshotting
-  flags.DEFINE_string('checkpoint_dir', '/data0/shubhtuls/code/lsi/cachedir/snapshots/',
+  flags.DEFINE_string('checkpoint_dir',
+                      '/data0/shubhtuls/code/lsi/cachedir/snapshots/',
                       'Root directory for tensorflow output files')
-  flags.DEFINE_string('results_vis_dir', '/data0/shubhtuls/code/lsi/cachedir/visualization/',
+  flags.DEFINE_string('results_vis_dir',
+                      '/data0/shubhtuls/code/lsi/cachedir/visualization/',
                       'Root directory for image output files')
-  flags.DEFINE_string('results_eval_dir', '/data0/shubhtuls/code/lsi/cachedir/evaluation/',
+  flags.DEFINE_string('results_eval_dir',
+                      '/data0/shubhtuls/code/lsi/cachedir/evaluation/',
                       'Root directory for results')
-  flags.DEFINE_string(
-      'exp_name', '',
-      'Name of previous net to pretrain from.')
+  flags.DEFINE_string('exp_name', '', 'Name of previous net to pretrain from.')
   flags.DEFINE_integer(
       'train_iter', 0,
       'Iteration of saved net to evaluate. 0 implies use latest')
@@ -61,7 +61,9 @@ def define_default_flags(flags):
   flags.DEFINE_integer('img_height', 256, 'image height')
   flags.DEFINE_integer('img_width', 256, 'image width')
   flags.DEFINE_integer('visuals_freq', 10, 'logging frequency for visuals')
-  flags.DEFINE_boolean('save_pred_results', False, 'Save predictions at every iter. Useful for KITTI depth eval.')
+  flags.DEFINE_boolean(
+      'save_pred_results', False,
+      'Save predictions at every iter. Useful for KITTI depth eval.')
 
 
 class Tester(object):
@@ -132,11 +134,12 @@ class Tester(object):
     keys = self.visuals_keys
     keys.sort()
     table_rows = [html_utils.table_row(keys)]
-    for vi in range(self.vis_iter-1):
-      table_cols = [html_utils.image(
-          'vis_iter_{}/{}.png'.format(vi, k), k,
-          self.opts.img_height, self.opts.img_width
-      ) for k in keys]
+    for vi in range(self.vis_iter - 1):
+      table_cols = [
+          html_utils.image('vis_iter_{}/{}.png'.format(vi, k), k,
+                           self.opts.img_height, self.opts.img_width)
+          for k in keys
+      ]
       table_rows.append(html_utils.table_row(table_cols))
 
     html = html_utils.html_page(html_utils.table(table_rows))
@@ -150,8 +153,8 @@ class Tester(object):
       visuals: Dictionary of images.
     """
     self.visuals_keys = visuals.keys()
-    imgs_dir = os.path.join(
-        self.opts.results_vis_dir, 'vis_iter_{}'.format(self.vis_iter))
+    imgs_dir = os.path.join(self.opts.results_vis_dir,
+                            'vis_iter_{}'.format(self.vis_iter))
     if not os.path.exists(imgs_dir):
       os.makedirs(imgs_dir)
     for k in visuals:
@@ -164,7 +167,6 @@ class Tester(object):
 
     self.vis_iter += 1
 
-
   def save_preds(self, preds):
     """Save visuals.
 
@@ -172,11 +174,10 @@ class Tester(object):
       preds: Dictionary of images.
     """
     preds['img_names'] = self.data_loader.src_image_names
-    save_file = os.path.join(
-        self.opts.results_eval_dir, 'iter_{}.mat'.format(self.pred_save_iter))
+    save_file = os.path.join(self.opts.results_eval_dir,
+                             'iter_{}.mat'.format(self.pred_save_iter))
     sio.savemat(save_file, preds)
     self.pred_save_iter += 1
-
 
   def test(self):
     """Training routine.
@@ -200,24 +201,18 @@ class Tester(object):
     with tf.name_scope('saver'):
       var_list = [var for var in tf.model_variables()]
 
-      self.saver = tf.train.Saver(
-          var_list)
+      self.saver = tf.train.Saver(var_list)
 
-      self.checkpoint = os.path.join(
-          opts.checkpoint_dir,
-          'model-{}'.format(opts.train_iter))
+      self.checkpoint = os.path.join(opts.checkpoint_dir,
+                                     'model-{}'.format(opts.train_iter))
 
     with tf.Session() as sess:
-      # print('Trainable variables: ')
-      # for var in tf.model_variables():
-        # print(var.name)
-
       if not os.path.exists(opts.results_eval_dir):
-          os.makedirs(opts.results_eval_dir)
+        os.makedirs(opts.results_eval_dir)
 
-      # check if a previous checkpoint exists in current folder
+      # Check if a previous checkpoint exists in current folder.
       checkpoint = tf.train.latest_checkpoint(opts.checkpoint_dir)
-      log.info('Previous checkpoint: ' + str(checkpoint))
+      log.info('Previous checkpoint: %s', str(checkpoint))
       if opts.train_iter > 0:
         log.info('Loading net: %s', self.checkpoint)
         self.saver.restore(sess, self.checkpoint)
@@ -226,7 +221,7 @@ class Tester(object):
         log.info('Loading latest net: %s', checkpoint)
         self.saver.restore(sess, checkpoint)
 
-      for step in range(1, opts.num_eval_iter+1):
+      for step in range(1, opts.num_eval_iter + 1):
         log.info('Iter : %d', step)
         fetches = [self.metrics, self.metrics_norm]
         if opts.save_pred_results:
@@ -249,10 +244,12 @@ class Tester(object):
 
       self.write_summary_page()
 
-      with open(os.path.join(opts.results_eval_dir, 'results.txt'), 'w') as eval_file:
+      with open(os.path.join(opts.results_eval_dir, 'results.txt'),
+                'w') as eval_file:
         for k in self.metrics_data:
           self.metrics_data[k] = np.array(self.metrics_data[k])
           self.metrics_norm_data[k] = np.array(self.metrics_norm_data[k])
 
           eval_file.write('Mean {}: {}\n'.format(
-              k, np.sum(self.metrics_data[k])/np.sum(self.metrics_norm_data[k])))
+              k,
+              np.sum(self.metrics_data[k]) / np.sum(self.metrics_norm_data[k])))
