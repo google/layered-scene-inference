@@ -54,7 +54,7 @@ for c = 1:length(voc_classes)
     for col = 1:3
       img(:,:,col) = img(:,:,col).*mask;
     end
-    %img = cat(3, img, mask);
+
     img = img(bbox(2):bbox(4), bbox(1):bbox(3),:);
     mask = mask(bbox(2):bbox(4), bbox(1):bbox(3));
 

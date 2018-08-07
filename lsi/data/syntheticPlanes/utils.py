@@ -13,17 +13,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-"""Utils for Synthetic Planar Data Generator.
+"""Utils for synthetic planar data generator.
 """
 
 import fnmatch
 import math
 import os
+
+from absl import logging as log
 import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
-from absl import logging as log
 
 
 def resize_instrinsic(intrinsic, scale_x, scale_y):
@@ -46,11 +46,8 @@ def dims2kmat(w_plane, h_plane, w_tex, h_tex):
     dz : distance along z
   """
   dz = 1.0  # assume fronto-parallel plane at Z=1
-  kmat = np.array([
-      [w_tex*dz/w_plane, 0, w_tex/2],
-      [0, h_tex*dz/h_plane, h_tex/2],
-      [0, 0, 1]
-  ])
+  kmat = np.array([[w_tex * dz / w_plane, 0, w_tex / 2],
+                   [0, h_tex * dz / h_plane, h_tex / 2], [0, 0, 1]])
   return kmat
 
 
@@ -75,7 +72,7 @@ def get_centre(pt, x_dir, y_dir, w, h, off_x=0.5, off_y=0.5):
   y_dir = np.divide(y_dir, np.linalg.norm(y_dir))
 
   pt = np.reshape(pt, (3, 1))
-  return pt + w*x_dir*(0.5-off_x) + h*y_dir*(0.5-off_y)
+  return pt + w * x_dir * (0.5 - off_x) + h * y_dir * (0.5 - off_y)
 
 
 def canonical_transform(centre_s, x_dir, y_dir, trans_init=None):
@@ -125,20 +122,50 @@ def box_planes(extent):
   y_dir = np.array([0, 1, 0])
   z_dir = np.array([0, 0, 1])
   front = {
-      'pt': np.array([x0, y0, z1]), 'x_dir': x_dir, 'y_dir': y_dir,
-      'w': x1-x0, 'h': y1-y0, 'off_x': 0, 'off_y': 0}
+      'pt': np.array([x0, y0, z1]),
+      'x_dir': x_dir,
+      'y_dir': y_dir,
+      'w': x1 - x0,
+      'h': y1 - y0,
+      'off_x': 0,
+      'off_y': 0
+  }
   ceil = {
-      'pt': np.array([x0, y0, z1]), 'x_dir': x_dir, 'y_dir': -1*z_dir,
-      'w': x1-x0, 'h': z1-z0, 'off_x': 0, 'off_y': 0}
+      'pt': np.array([x0, y0, z1]),
+      'x_dir': x_dir,
+      'y_dir': -1 * z_dir,
+      'w': x1 - x0,
+      'h': z1 - z0,
+      'off_x': 0,
+      'off_y': 0
+  }
   floor = {
-      'pt': np.array([x0, y1, z1]), 'x_dir': x_dir, 'y_dir': -1*z_dir,
-      'w': x1-x0, 'h': z1-z0, 'off_x': 0, 'off_y': 0}
+      'pt': np.array([x0, y1, z1]),
+      'x_dir': x_dir,
+      'y_dir': -1 * z_dir,
+      'w': x1 - x0,
+      'h': z1 - z0,
+      'off_x': 0,
+      'off_y': 0
+  }
   wall_l = {
-      'pt': np.array([x0, y0, z0]), 'x_dir': z_dir, 'y_dir': y_dir,
-      'w': z1-z0, 'h': y1-y0, 'off_x': 0, 'off_y': 0}
+      'pt': np.array([x0, y0, z0]),
+      'x_dir': z_dir,
+      'y_dir': y_dir,
+      'w': z1 - z0,
+      'h': y1 - y0,
+      'off_x': 0,
+      'off_y': 0
+  }
   wall_r = {
-      'pt': np.array([x1, y0, z0]), 'x_dir': z_dir, 'y_dir': y_dir,
-      'w': z1-z0, 'h': y1-y0, 'off_x': 0, 'off_y': 0}
+      'pt': np.array([x1, y0, z0]),
+      'x_dir': z_dir,
+      'y_dir': y_dir,
+      'w': z1 - z0,
+      'h': y1 - y0,
+      'off_x': 0,
+      'off_y': 0
+  }
 
   planes.append(front)
   planes.append(floor)
@@ -150,19 +177,13 @@ def box_planes(extent):
 
 
 def _rot_y(theta):
-  return np.array([
-      [math.cos(theta), 0, math.sin(theta)],
-      [0, 1, 0],
-      [-math.sin(theta), 0, math.cos(theta)]
-  ])
+  return np.array([[math.cos(theta), 0, math.sin(theta)], [0, 1, 0],
+                   [-math.sin(theta), 0, math.cos(theta)]])
 
 
 def _rot_x(theta):
-  return np.array([
-      [1, 0, 0],
-      [0, math.cos(theta), -math.sin(theta)],
-      [0, math.sin(theta), math.cos(theta)]
-  ])
+  return np.array([[1, 0, 0], [0, math.cos(theta), -math.sin(theta)],
+                   [0, math.sin(theta), math.cos(theta)]])
 
 
 def lookat_rotation(delta):
@@ -176,16 +197,22 @@ def lookat_rotation(delta):
   delta = np.reshape(delta, 3)
   theta = np.arctan2(delta[0], delta[2])
   radius = np.linalg.norm(delta)
-  phi = np.arcsin(delta[1]/radius)
-  return np.matmul(_rot_x(phi), _rot_y(-1*theta))
+  phi = np.arcsin(delta[1] / radius)
+  return np.matmul(_rot_x(phi), _rot_y(-1 * theta))
 
 
 class QueuedRandomTextureLoader(object):
   """Loads a random image from the base_dir (or its subdirectories).
   """
 
-  def __init__(self, base_dir, ext='.jpg',
-               batch_size=1, h=None, w=None, nc=3, split='all'):
+  def __init__(self,
+               base_dir,
+               ext='.jpg',
+               batch_size=1,
+               h=None,
+               w=None,
+               nc=3,
+               split='all'):
     """Initialization function.
 
     Args:
@@ -210,17 +237,17 @@ class QueuedRandomTextureLoader(object):
     rng = np.random.RandomState(0)
     rng.shuffle(self.img_list)
     n_all = len(self.img_list)
-    n_train = int(round(0.7*n_all))
-    n_val = int(round(0.15*n_all))
+    n_train = int(round(0.7 * n_all))
+    n_val = int(round(0.15 * n_all))
     if split == 'train':
       self.img_list = self.img_list[0:n_train]
     elif split == 'val':
-      self.img_list = self.img_list[n_train:(n_train+n_val)]
+      self.img_list = self.img_list[n_train:(n_train + n_val)]
     elif split == 'test':
-      self.img_list = self.img_list[(n_train+n_val):n_all]
+      self.img_list = self.img_list[(n_train + n_val):n_all]
     print self.img_list[0]
 
-    # Tf graph
+    # TensorFlow graph
     log.info('Image directory : %s.', base_dir)
     log.info('Number of Images : %d.', len(self.img_list))
     log.info('Data Split : %s.', split)
@@ -233,7 +260,7 @@ class QueuedRandomTextureLoader(object):
       _, image_file = image_reader.read(filename_queue)
       # image_file = tf.Print(image_file, [image_file_key])
       image = tf.cast(tf.image.decode_image(image_file, channels=nc), 'float32')
-      image *= 1.0/255  # since images are loaded in [0, 255]
+      image *= 1.0 / 255  # since images are loaded in [0, 255]
       image = tf.slice(image, [0, 0, 0], [-1, -1, nc])
 
       orig_shape = tf.shape(image)
@@ -247,7 +274,6 @@ class QueuedRandomTextureLoader(object):
           [image, orig_shape], batch_size=batch_size)
 
       # Coordinate the loading of image files.
-
       config = tf.ConfigProto()
       config.gpu_options.allow_growth = True
 

@@ -13,17 +13,15 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-"""Kitti Data Loader.
+"""Code for preprocessing KITTI data.
 """
 
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+
 import fnmatch
 import os
-import sys
-import pdb
 
 from absl import app
 from absl import flags
@@ -31,16 +29,13 @@ from absl import flags
 FLAGS = flags.FLAGS
 
 flags.DEFINE_string(
-    'kitti_data_root',
-    '/data0/shubhtuls/datasets/kitti',
-    'Directory where flowers data images are cameras are stored'
-)
+    'kitti_data_root', '/data0/shubhtuls/datasets/kitti',
+    'Directory where flowers data images are cameras are stored')
 
 flags.DEFINE_string(
     'spss_exec',
     '/data0/shubhtuls/code/lsi/external/spsstereo_git_patch/spsstereo',
-    'Directory where flowers data images are cameras are stored'
-)
+    'Directory where flowers data images are cameras are stored')
 
 
 def raw_city_sequences():
@@ -91,20 +86,19 @@ def main(_):
 
   for seq_id in seq_names:
     seq_date = seq_id[0:10]
-    seq_dir = os.path.join(
-        root_dir, seq_date, '{}_sync'.format(seq_id))
-    for root, _, filenames in os.walk(
-        os.path.join(seq_dir, 'image_02')):
+    seq_dir = os.path.join(root_dir, seq_date, '{}_sync'.format(seq_id))
+    for root, _, filenames in os.walk(os.path.join(seq_dir, 'image_02')):
       for filename in fnmatch.filter(filenames, '*.png'):
         src_img_name = os.path.join(root, filename)
         if exclude_img not in src_img_name:
           img_list_src.append(src_img_name)
-          folder_list_spss.append(os.path.join(
-              root_dir, 'spss_stereo_results', src_img_name.split('/')[-4]
-          ))
+          folder_list_spss.append(
+              os.path.join(root_dir, 'spss_stereo_results',
+                           src_img_name.split('/')[-4]))
 
   img_list_trg = [f.replace('image_02', 'image_03') for f in img_list_src]
-  for ix, (src_im, trg_im, dst) in enumerate(zip(img_list_src, img_list_trg, folder_list_spss)):
+  for ix, (src_im, trg_im, dst) in enumerate(
+      zip(img_list_src, img_list_trg, folder_list_spss)):
     if ix % 50 == 0:
       print('{}/{}'.format(ix, len(img_list_src)))
     if not os.path.exists(dst):

@@ -13,11 +13,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-"""Kitti Data Loader.
+"""Kitti data loader.
 """
 
-# use raw data downloader: http://www.cvlibs.net/download.php?file=raw_data_downloader.zip
+# Use raw data downloader:
+# http://www.cvlibs.net/download.php?file=raw_data_downloader.zip
 
 from __future__ import absolute_import
 from __future__ import division
@@ -90,16 +90,16 @@ class DataLoader(object):
     # 'mview' or 'odom' or 'raw_city' variant
     self.dataset_variant = opts.kitti_dataset_variant
     self.output_disparities = (self.dataset_variant == 'raw_city') and hasattr(
-        opts, 'kitti_dl_disparities'
-    ) and opts.kitti_dl_disparities and (not opts.data_split == 'train')
+        opts, 'kitti_dl_disparities') and opts.kitti_dl_disparities and (
+            opts.data_split != 'train')
     self.root_dir = opts.kitti_data_root
     if self.dataset_variant == 'odom':
-      # Dataset corresponds to the odometry extension here
+      # Dataset corresponds to the odometry extension here:
       # http://www.cvlibs.net/datasets/kitti/eval_odometry.php
-      self.root_dir = os.path.join(
-          self.root_dir, 'odometry', 'dataset', 'sequences')
+      self.root_dir = os.path.join(self.root_dir, 'odometry', 'dataset',
+                                   'sequences')
     elif self.dataset_variant == 'mview':
-      # Dataset corresponds to the multi-view extension here
+      # Dataset corresponds to the multi-view extension here:
       # http://www.cvlibs.net/datasets/kitti/eval_stereo_flow.php?benchmark=flow
       # Calibration from http://www.cvlibs.net/datasets/kitti/setup.php
       self.root_dir = os.path.join(self.root_dir, 'stereo_multiview_2015')
@@ -108,7 +108,7 @@ class DataLoader(object):
       else:
         self.root_dir += '/testing'
     elif self.dataset_variant == 'raw_city':
-      # Dataset corresponds to the multi-view extension here
+      # Dataset corresponds to the multi-view extension here:
       # http://www.cvlibs.net/datasets/kitti/raw_data.php
       # self.root_dir = os.path.join(self.root_dir, 'raw')
       self.root_dir = os.path.join(self.root_dir, 'kitti_raw')
@@ -120,14 +120,13 @@ class DataLoader(object):
   def init_img_names_seq_list(self):
     """Initialize list of image names and corresponding sequence ids.
     """
-    # image list
+    # Image list.
     opts = self.opts
     self.img_list_src = []
     self.img_list_trg = []
     self.seq_id_list = []
     if self.dataset_variant == 'mview':
-      for root, _, filenames in os.walk(
-          os.path.join(self.root_dir, 'image_2')):
+      for root, _, filenames in os.walk(os.path.join(self.root_dir, 'image_2')):
         for filename in fnmatch.filter(filenames, '*.png'):
           self.img_list_src.append(os.path.join(root, filename))
       self.img_list_src.sort()
@@ -144,8 +143,7 @@ class DataLoader(object):
         data_seq = range(9, 11)
       for seq_id in data_seq:
         seq_dir = os.path.join(self.root_dir, '{:02d}'.format(seq_id))
-        for root, _, filenames in os.walk(
-            os.path.join(seq_dir, 'image_2')):
+        for root, _, filenames in os.walk(os.path.join(seq_dir, 'image_2')):
           for filename in fnmatch.filter(filenames, '*.png'):
             self.img_list_src.append(os.path.join(root, filename))
             self.seq_id_list.append(seq_id)
@@ -156,20 +154,19 @@ class DataLoader(object):
       rng = np.random.RandomState(0)
       rng.shuffle(seq_names)
       n_all = len(seq_names)
-      n_train = int(round(0.7*n_all))
-      n_val = int(round(0.15*n_all))
+      n_train = int(round(0.7 * n_all))
+      n_val = int(round(0.15 * n_all))
       if opts.data_split == 'train':
         seq_names = seq_names[0:n_train]
       elif opts.data_split == 'val':
-        seq_names = seq_names[n_train:(n_train+n_val)]
+        seq_names = seq_names[n_train:(n_train + n_val)]
       elif opts.data_split == 'test':
-        seq_names = seq_names[(n_train+n_val):n_all]
+        seq_names = seq_names[(n_train + n_val):n_all]
       for seq_id in seq_names:
         seq_date = seq_id[0:10]
-        seq_dir = os.path.join(
-            self.root_dir, seq_date, '{}_sync'.format(seq_id))
-        for root, _, filenames in os.walk(
-            os.path.join(seq_dir, 'image_02')):
+        seq_dir = os.path.join(self.root_dir, seq_date,
+                               '{}_sync'.format(seq_id))
+        for root, _, filenames in os.walk(os.path.join(seq_dir, 'image_02')):
           for filename in fnmatch.filter(filenames, '*.png'):
             src_img_name = os.path.join(root, filename)
             if exclude_img not in src_img_name:
@@ -177,24 +174,26 @@ class DataLoader(object):
               self.seq_id_list.append(seq_date)
 
     if self.dataset_variant == 'raw_city':
-      self.img_list_trg = [f.replace(
-          'image_02', 'image_03') for f in self.img_list_src]
+      self.img_list_trg = [
+          f.replace('image_02', 'image_03') for f in self.img_list_src
+      ]
 
       if self.output_disparities:
         self.img_list_disp_src = []
         for im_name in self.img_list_src:
           im_name_split = im_name.split('/')
           disp_name_src = os.path.join(
-              self.root_dir, 'spss_stereo_results',
-              im_name_split[-4],
+              self.root_dir, 'spss_stereo_results', im_name_split[-4],
               im_name_split[-1][:-4] + '_left_initial_disparity.png')
           self.img_list_disp_src.append(disp_name_src)
-        self.img_list_disp_trg = [f.replace(
-            'left', 'right') for f in self.img_list_disp_src]
+        self.img_list_disp_trg = [
+            f.replace('left', 'right') for f in self.img_list_disp_src
+        ]
 
     else:
-      self.img_list_trg = [f.replace(
-          'image_2', 'image_3') for f in self.img_list_src]
+      self.img_list_trg = [
+          f.replace('image_2', 'image_3') for f in self.img_list_src
+      ]
 
   def preload_calib_files(self):
     """Preload calibration files for the sequence."""
@@ -209,25 +208,25 @@ class DataLoader(object):
 
     elif self.dataset_variant == 'odom':
       for seq_id in range(22):
-        calib_file = os.path.join(
-            self.root_dir, '{:02d}'.format(seq_id), 'calib.txt')
+        calib_file = os.path.join(self.root_dir, '{:02d}'.format(seq_id),
+                                  'calib.txt')
         cam_calibration = self.read_calib_file(calib_file)
         for key in ['P_rect_00', 'P_rect_01', 'P_rect_02', 'P_rect_03']:
-          cam_calibration[key] = np.copy(
-              cam_calibration[key.replace('_rect_0', '')])
+          cam_calibration[key] = np.copy(cam_calibration[key.replace(
+              '_rect_0', '')])
         self.cam_calibration[seq_id] = cam_calibration
 
     elif self.dataset_variant == 'raw_city':
       seq_names = raw_city_sequences()
       for seq_id in seq_names:
         seq_date = seq_id[0:10]
-        calib_file = os.path.join(
-            self.root_dir, seq_date, 'calib_cam_to_cam.txt')
+        calib_file = os.path.join(self.root_dir, seq_date,
+                                  'calib_cam_to_cam.txt')
         self.cam_calibration[seq_date] = self.read_calib_file(calib_file)
 
   def read_calib_file(self, file_path):
     """Read camera intrinsics."""
-    # taken from https://github.com/hunse/kitti
+    # Taken from https://github.com/hunse/kitti
     float_chars = set('0123456789.e+- ')
     data = {}
     with open(file_path, 'r') as f:
@@ -246,15 +245,15 @@ class DataLoader(object):
     return data
 
   def img_queue_loader(self, img_list, nc=3):
+    """Load images into queue."""
     with tf.name_scope('queued_data_loader'):
       filename_queue = tf.train.string_input_producer(
           img_list, seed=0, shuffle=True)
       image_reader = tf.WholeFileReader()
       _, image_file = image_reader.read(filename_queue)
-      # image_file = tf.Print(image_file, [image_file_key])
       image = tf.image.decode_image(image_file)
       image = tf.cast(tf.image.decode_image(image_file), 'float32')
-      image *= 1.0/255  # since images are loaded in [0, 255]
+      image *= 1.0 / 255  # since images are loaded in [0, 255]
       image = tf.slice(image, [0, 0, 0], [-1, -1, nc])
 
       orig_shape = tf.shape(image)
@@ -275,21 +274,21 @@ class DataLoader(object):
       self.src_disp, _ = self.img_queue_loader(self.img_list_disp_src, nc=1)
       self.trg_disp, _ = self.img_queue_loader(self.img_list_disp_trg, nc=1)
 
-    # All queued vars
+    # All queued vars.
     sample_queue = tf.train.range_input_producer(
         len(self.img_list_src), seed=0, shuffle=True)
     sample_index = sample_queue.dequeue()
 
     queue_tensors = [
-        self.src_im, self.src_orig_shape,
-        self.trg_im, self.trg_orig_shape, sample_index]
+        self.src_im, self.src_orig_shape, self.trg_im, self.trg_orig_shape,
+        sample_index
+    ]
     if self.output_disparities:
       queue_tensors.append(self.src_disp)
       queue_tensors.append(self.trg_disp)
 
     self.queue_output = tf.train.batch(
-        queue_tensors,
-        batch_size=self.batch_size)
+        queue_tensors, batch_size=self.batch_size)
 
     # Coordinate the loading of image files.
     config = tf.ConfigProto()
@@ -301,8 +300,8 @@ class DataLoader(object):
     self.threads = tf.train.start_queue_runners(
         coord=self.coord, sess=self.tf_sess)
 
-  def forward_instance(
-      self, img_src, img_trg, src_shape, trg_shape, calib_data):
+  def forward_instance(self, img_src, img_trg, src_shape, trg_shape,
+                       calib_data):
     """Single pair loader.
 
     Args:
@@ -329,22 +328,18 @@ class DataLoader(object):
     trans_trg = np.copy(calib_data['P_rect_03'].reshape(3, 4)[:, 3])
 
     # The translation is in homogeneous 2D coords, convert to regular 3d space:
-    trans_src[0] = (trans_src[0] - k_s[0, 2]*trans_src[2])/k_s[0, 0]
-    trans_src[1] = (trans_src[1] - k_s[1, 2]*trans_src[2])/k_s[1, 1]
+    trans_src[0] = (trans_src[0] - k_s[0, 2] * trans_src[2]) / k_s[0, 0]
+    trans_src[1] = (trans_src[1] - k_s[1, 2] * trans_src[2]) / k_s[1, 1]
 
-    trans_trg[0] = (trans_trg[0] - k_t[0, 2]*trans_trg[2])/k_t[0, 0]
-    trans_trg[1] = (trans_trg[1] - k_t[1, 2]*trans_trg[2])/k_t[1, 1]
+    trans_trg[0] = (trans_trg[0] - k_t[0, 2] * trans_trg[2]) / k_t[0, 0]
+    trans_trg[1] = (trans_trg[1] - k_t[1, 2] * trans_trg[2]) / k_t[1, 1]
 
     trans = trans_trg - trans_src
 
-    k_s = resize_instrinsic(k_s, self.w/src_shape[1], self.h/src_shape[0])
-    k_t = resize_instrinsic(k_t, self.w/trg_shape[1], self.h/trg_shape[0])
+    k_s = resize_instrinsic(k_s, self.w / src_shape[1], self.h / src_shape[0])
+    k_t = resize_instrinsic(k_t, self.w / trg_shape[1], self.h / trg_shape[0])
 
-    return (
-        img_src, img_trg,
-        k_s, k_t,
-        rot, trans.reshape(3, 1)
-    )
+    return (img_src, img_trg, k_s, k_t, rot, trans.reshape(3, 1))
 
   def forward(self, bs):
     """Computes bs data instances.
@@ -361,24 +356,28 @@ class DataLoader(object):
     """
     batch = self.tf_sess.run(self.queue_output)
     if self.output_disparities:
-      img_src, src_shape, img_trg, trg_shape, sample_ids, disp_src, disp_trg = batch
+      (img_src, src_shape, img_trg, trg_shape, sample_ids, disp_src,
+       disp_trg) = batch
     else:
       img_src, src_shape, img_trg, trg_shape, sample_ids = batch
 
     self.src_image_names = [self.img_list_src[sample_ids[b]] for b in range(bs)]
 
-    instances_list = [list(self.forward_instance(
-        img_src[b, :, :, :],
-        img_trg[b, :, :, :],
-        src_shape[b],
-        trg_shape[b],
-        self.cam_calibration[self.seq_id_list[sample_ids[b]]]
-    )) for b in range(bs)]
+    instances_list = [
+        list(
+            self.forward_instance(
+                img_src[b, :, :, :], img_trg[b, :, :, :], src_shape[b],
+                trg_shape[b],
+                self.cam_calibration[self.seq_id_list[sample_ids[b]]]))
+        for b in range(bs)
+    ]
 
     nvars = len(instances_list[0])
-    concat_instances = [np.stack(
-        [instances_list[b][ix] for b in range(bs)]
-    ) for ix in range(nvars)]
+    concat_instances = [
+        np.stack([instances_list[b][ix]
+                  for b in range(bs)])
+        for ix in range(nvars)
+    ]
     if self.output_disparities:
       concat_instances.append(disp_src)
       concat_instances.append(disp_trg)
