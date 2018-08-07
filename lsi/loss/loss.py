@@ -13,7 +13,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """TensorFlow utils for loss function implementations.
 """
 
@@ -21,8 +20,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import tensorflow as tf
 from lsi.nnutils import helpers as nn_helpers
+import tensorflow as tf
 
 
 def event_prob(layer_masks):
@@ -36,26 +35,13 @@ def event_prob(layer_masks):
   """
   with tf.name_scope('event_prob'):
     eps = 1e-6
-    # so that masks are not exactly 0 or 1
-    # layer_masks = (1-eps)*layer_masks + 0.5*eps
-    layer_masks = tf.clip_by_value(layer_masks, eps, 1-eps)
+    # Clip so that masks are not exactly 0 or 1.
+    layer_masks = tf.clip_by_value(layer_masks, eps, 1 - eps)
 
-    # layer_masks = tf.Print(
-    #     layer_masks,
-    #     [tf.reduce_mean(layer_masks)], message='layer_masks mean')
-
-    log_inv_m = tf.log(1-layer_masks)
-
-    # log_inv_m = tf.Print(
-    #     log_inv_m, [tf.reduce_mean(log_inv_m)], message='log_inv_m mean')
-
+    log_inv_m = tf.log(1 - layer_masks)
     log_prob = tf.cumsum(log_inv_m, axis=0) - log_inv_m + tf.log(layer_masks)
-
-    # log_prob = tf.Print(
-    #     log_prob, [tf.reduce_mean(log_prob)], message='log_prob mean')
-
     layer_probs = tf.exp(log_prob, name='layer_probs')
-    escape_probs = 1-tf.reduce_sum(layer_probs, axis=0, keep_dims=True)
+    escape_probs = 1 - tf.reduce_sum(layer_probs, axis=0, keep_dims=True)
     return layer_probs, escape_probs
 
 
@@ -70,17 +56,20 @@ def decreasing_disp_loss(layer_disps):
   n_layers = layer_disps.get_shape().as_list()[0]
   if n_layers == 1:
     return 0
-  disps_pre = layer_disps[0:n_layers-1]
+  disps_pre = layer_disps[0:n_layers - 1]
   disps_pre = tf.stop_gradient(disps_pre)
   disps_post = layer_disps[1:n_layers]
   disps_incr = tf.nn.relu(disps_post - disps_pre)
   return tf.reduce_mean(disps_incr)
 
 
-def zbuffer_composition_loss(
-    layer_imgs, layer_masks,
-    layer_disps, trg_imgs,
-    bg_layer_disp=0, max_disp=1, zbuf_scale=10):
+def zbuffer_composition_loss(layer_imgs,
+                             layer_masks,
+                             layer_disps,
+                             trg_imgs,
+                             bg_layer_disp=0,
+                             max_disp=1,
+                             zbuf_scale=10):
   """Depth+Mask based composition loss between predictions and target.
 
   First computes per-pixel layer assignment probs using depth+masks based
@@ -98,7 +87,7 @@ def zbuffer_composition_loss(
   Returns:
     err: scalar error
   """
-  # add a layer with white color, disp=max_disp
+  # Add a layer with white color, disp=max_disp.
   shape_bg_img = layer_imgs.get_shape().as_list()
   shape_bg_img[0] = 1
 
@@ -108,20 +97,19 @@ def zbuffer_composition_loss(
   with tf.name_scope('zbuffer_composition_loss'):
     bg_img = tf.ones(shape_bg_img)
     bg_mask = tf.ones(shape_bg_mask)
-    bg_disp = tf.ones(shape_bg_mask)*bg_layer_disp
+    bg_disp = tf.ones(shape_bg_mask) * bg_layer_disp
 
     layer_imgs = tf.concat([layer_imgs, bg_img], 0)
     layer_masks = tf.concat([layer_masks, bg_mask], 0)
     layer_disps = tf.concat([layer_disps, bg_disp], 0)
 
     layer_probs = nn_helpers.zbuffer_weights(
-        layer_disps/max_disp, scale=zbuf_scale)*layer_masks
+        layer_disps / max_disp, scale=zbuf_scale) * layer_masks
     probs_sum = tf.reduce_sum(layer_probs, axis=0, keep_dims=True)
     layer_probs = nn_helpers.divide_safe(layer_probs, probs_sum)
 
-    layerwise_cost = tf.square(layer_imgs-trg_imgs)*layer_probs
+    layerwise_cost = tf.square(layer_imgs - trg_imgs) * layer_probs
     layerwise_cost = tf.reduce_sum(layerwise_cost, axis=0)
-    layerwise_cost = 0.5*tf.reduce_mean(layerwise_cost)
+    layerwise_cost = 0.5 * tf.reduce_mean(layerwise_cost)
 
     return layerwise_cost
-
