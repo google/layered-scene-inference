@@ -3,8 +3,8 @@
 
 This code accompanies the paper 
 
-Layer-structured 3D Scene Inference via View Synthesis
-Shubham Tulsiani, Richard Tucker, Noah Snavely.
+Layer-structured 3D Scene Inference via View Synthesis\
+Shubham Tulsiani, Richard Tucker, Noah Snavely.\
 In ECCV, 2018
 
 *Please note that this is not an officially supported Google product.*
