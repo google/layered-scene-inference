@@ -13,8 +13,6 @@ In ECCV, 2018.
 
 This is the initial release of the Layered Scene Inference TensorFlow code for learning to infer layered depth images (LDIs) from single input views via multi-view supervision.
 
-Note that this is not an officially supported Google product.
-
 <img src="https://shubhtuls.github.io/lsi/resources/images/teaser.png" width="60%">
 
 ## Training and Evaluating
