@@ -16,7 +16,7 @@ This is the initial release of the Layered Scene Inference TensorFlow code for l
 <img src="https://shubhtuls.github.io/lsi/resources/images/teaser.png" width="60%">
 
 ## Training and Evaluating
-You'll first need to follow the [installation instructions](docs/installation.md). To subsequently train and evaluate the LDI prediction models, see the documentation for running experiments using the [Synthetic](docs/synth.md) or [Kitti](docs/kitti.md) datasets.
+You'll first need to follow the [installation instructions](docs/installation.md). To subsequently train and evaluate the LDI prediction models, see the documentation for running experiments using the [Synthetic](docs/synth.md) or [KITTI](docs/kitti.md) datasets.
 
 ### Citation
 If you use this code for your research, please consider citing:
