@@ -13,7 +13,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Script for running ldi predictor experiment.
+"""Script for running LDI prediction experiment.
 """
 
 from __future__ import absolute_import
@@ -39,80 +39,88 @@ FLAGS = flags.FLAGS
 ## Experiment Specific Flags
 train_utils.define_default_flags(flags)
 flags.DEFINE_string('exp_name', 'synth_ldi_pred_encdec',
-                    'Name of the experiment')
-flags.DEFINE_integer('n_layers', 2, 'Number of LDI layers')
+                    'Name of the experiment.')
+flags.DEFINE_integer('n_layers', 2, 'Number of LDI layers.')
 flags.DEFINE_boolean(
-    'pred_ldi_masks', False, """Predict masks for LDIs or use 1s.
-    All experiments so far always used False""")
+    'pred_ldi_masks', False, 'Predict masks for LDIs or use 1s. '
+    'All experiments for the ECCV paper used False.')
 
 ## Flags specific to select data loader
 flags.DEFINE_enum('dataset', 'synthetic', ['synthetic', 'kitti'], 'Dataset')
 flags.DEFINE_enum('data_split', 'train', ['all', 'train', 'val', 'test'],
                   'Dataset split')
-flags.DEFINE_boolean('debug_synth_texture', False,
-                     'Use gt LDI disps instead of predicted')
+flags.DEFINE_boolean(
+    'debug_synth_texture', False,
+    'Use ground truth LDI disparities rather than '
+    'predicted disparities.')
 
 ## Flags specific to synthetic data loader
 flags.DEFINE_string('pascal_objects_dir', '/code/lsi/cachedir/sbd/objects',
-                    'Directory where images of pascal objects are stored')
+                    'Directory containing images of PASCAL objects.')
 flags.DEFINE_string('sun_imgs_dir', '/datasets/SUN2012pascalformat/JPEGImages',
-                    'Directory where SUN dataset images are stored')
+                    'Directory containing SUN dataset images.')
 flags.DEFINE_integer('n_obj_min', 1,
-                     'Min number of foreground layers in synthetic data')
+                     'Minimum number of foreground layers in synthetic data.')
 flags.DEFINE_integer('n_obj_max', 4,
-                     'Max number of foreground layers in synthetic data')
-flags.DEFINE_integer('n_box_planes', 5, 'Number of planes from the box to use')
+                     'Maximum number of foreground layers in synthetic data.')
 flags.DEFINE_integer(
-    'synth_ds_factor', 1,
-    'Render synthetic data at a higher res and downsample by this factor')
+    'n_box_planes', 5, 'Number of planes to use from a 3D box '
+    'containing the scene.')
+flags.DEFINE_integer(
+    'synth_ds_factor', 1, 'Render synthetic data at a higher resolution and '
+    'downsample by this factor (to achieve antialiased '
+    'renders.)')
 flags.DEFINE_boolean('synth_dl_eval_data', False,
-                     'Output gt info for synth data')
+                     'Output ground truth information for synthetic data.')
 
 ## Flags specific to kitti dataset
 flags.DEFINE_string('kitti_data_root', '/datasets/kitti',
-                    'Directory where kitti data images are cameras are stored')
+                    'Directory containing KITTI images and cameras.')
 flags.DEFINE_enum('kitti_dataset_variant', 'mview',
-                  ['odom', 'mview', 'raw_city'], 'Kitti set to use')
+                  ['odom', 'mview', 'raw_city'], 'KITTI set to use.')
 flags.DEFINE_boolean('kitti_dl_disparities', False,
-                     'Output gt info for kitti disparities')
+                     'Output ground truth KITTI disparities.')
 
 ## Flags related to the training (loss, CNN architecture etc.)
 flags.DEFINE_float('self_cons_wt', 1.0,
-                   'Weight for ordered self-consistency loss')
+                   'Weight for ordered self-consistency loss.')
 flags.DEFINE_boolean(
-    'l0_self_cons', False,
-    'If true, use layer 0 texture for self cons, else use composed image')
+    'l0_self_cons', False, 'If true, use layer 0 texture for self consistency, '
+    'otherwise use composed image.')
 flags.DEFINE_float(
     'indep_splat_wt', 1.0,
-    'Weight for reconstruction loss via forward splatting (min across layers)')
+    'Weight for reconstruction loss via forward splatting '
+    '(minimum across layers).')
 flags.DEFINE_float(
     'compose_splat_wt', 1.0,
-    'Weight for reconstruction loss via layer composition forward splatting')
+    'Weight for reconstruction loss via layer composition '
+    'forward splatting.')
 flags.DEFINE_float('splat_bdry_ignore', 0.1,
-                   'Ignore this fraction of pixels along the boundary')
-flags.DEFINE_float('zbuf_scale', 50, 'Scale for zbuffer weight computation')
+                   'Ignore this fraction of pixels along the boundary.')
+flags.DEFINE_float('zbuf_scale', 50, 'Scale for zbuffer weight computation.')
 flags.DEFINE_float('trg_splat_downsampling', 0.5,
-                   'The forward splatted image is downsampled by this factor')
-flags.DEFINE_float('disp_smoothness_wt', 0.1, 'Disparity should vary smoothly')
-flags.DEFINE_float('incr_depth_wt', 10.0,
-                   'Relative weight for depth increment loss')
+                   'The forward splatted image is downsampled by this factor.')
+flags.DEFINE_float('disp_smoothness_wt', 0.1, 'Disparity should vary smoothly.')
+flags.DEFINE_float(
+    'incr_depth_wt', 10.0, 'Relative weight for depth increment loss '
+    '(enforces increasing depths across layers).')
 flags.DEFINE_boolean('use_unet', True,
-                     'Whether to use a CNN with skip connections')
+                     'Whether to use a CNN with skip connections.')
 flags.DEFINE_integer('n_layerwise_steps', 3,
-                     'Number of independent per-layer up-conv steps')
+                     'Number of independent per-layer up-convolution steps.')
 
 ## Dataset dependent flags : overridden in code
-flags.DEFINE_float('bg_layer_disp', 1e-6,
-                   'Disparity of bg layer: value automatically chosen in code')
+flags.DEFINE_float(
+    'bg_layer_disp', 1e-6,
+    'Disparity of bg layer: value automatically chosen in code.')
 flags.DEFINE_float('depth_softmax_temp', 1e-6,
-                   'Softmax temperature: value automatically chosen in code')
+                   'Softmax temperature: value automatically chosen in code.')
 flags.DEFINE_float(
     'disp_vis_scale', 255,
-    'Disparity visualization scale: value automatically chosen in code')
+    'Disparity visualization scale: value automatically chosen in code.')
 flags.DEFINE_float(
-    'max_disp', 0, """Inverse depth for closest plane.
-    Value automatically chosen in code according to the dataset if set to 0.
-    """)
+    'max_disp', 0, 'Inverse depth for closest plane. '
+    'Value automatically chosen in code according to the dataset if set to 0.')
 
 
 class Trainer(train_utils.Trainer):
@@ -258,7 +266,7 @@ class Trainer(train_utils.Trainer):
     """Loss computation.
     """
     opts = self.opts
-    # Self-consisteny for source image
+    # Self-consistency for source image.
     if opts.l0_self_cons:
       self.self_cons_loss_src = tf.reduce_mean(
           tf.abs(self.imgs_src - self.ldi_src[0][0]))
@@ -288,7 +296,7 @@ class Trainer(train_utils.Trainer):
 
     self.self_cons_loss = self.self_cons_loss_src + self.self_cons_loss_trg
 
-    # Recons loss for trg/src image via src/trg image LDI
+    # Reconstruction loss for trg/src image via src/trg image LDI.
     self.indep_splat_loss = 0
     self.compose_splat_loss = 0
     for sp_loss_type in ['indep', 'compose']:
@@ -325,7 +333,7 @@ class Trainer(train_utils.Trainer):
               bg_layer_disp=opts.bg_layer_disp,
               max_disp=opts.max_disp)
 
-        ## Forward splatting loss
+        ## Forward splatting loss.
         to_recons_img_downsampled = tf.image.resize_images(
             to_recons_img,
             recons_splat.get_shape().as_list()[2:4],
@@ -335,7 +343,7 @@ class Trainer(train_utils.Trainer):
                 tf.abs(to_recons_img_downsampled - recons_splat),
                 axis=4),
             axis=0)
-        # ignore loss around boundary splat_bdry_ignore
+        # Ignore loss around boundary splat_bdry_ignore.
         _, loss_h, loss_w = pwise_splat_loss.get_shape().as_list()
         x_min = int(round(loss_w * opts.splat_bdry_ignore))
         x_max = loss_w - x_min
@@ -377,12 +385,12 @@ class Trainer(train_utils.Trainer):
           loss_diff = tf.nn.relu(lwise_splat_loss[0] - lwise_splat_loss[1])
           tf.summary.image(loss_img_name + '_splat_loss_diff', loss_diff)
 
-    ## Smooth Disp Loss
+    ## Smooth disparity loss.
     self.disp_smoothness_loss = 0
     self.disp_smoothness_loss += ldi_utils.disp_smoothness_loss(self.ldi_src[2])
     self.disp_smoothness_loss += ldi_utils.disp_smoothness_loss(self.ldi_trg[2])
 
-    ## Increasing disp loss
+    ## Increasing disparity across layers loss.
     self.incr_depth_loss = 0.0
     self.incr_depth_loss += loss.decreasing_disp_loss(self.ldi_src[2])
     self.incr_depth_loss += loss.decreasing_disp_loss(self.ldi_trg[2])

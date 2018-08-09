@@ -13,7 +13,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Script for evaluating ldi predictor experiment.
+"""Script for evaluating LDI prediction experiment.
 """
 
 from __future__ import absolute_import
@@ -39,64 +39,66 @@ FLAGS = flags.FLAGS
 
 ## Experiment-specific flags.
 test_utils.define_default_flags(flags)
-flags.DEFINE_integer('n_layers', 3, 'Max number of layers')
+flags.DEFINE_integer('n_layers', 3, 'Maximum number of layers.')
 flags.DEFINE_boolean('pred_ldi_masks', False,
-                     'Predict masks for LDIs or use 1s')
+                     'Predict masks for LDIs or use 1s.')
 flags.DEFINE_boolean('batch_norm_training', True,
-                     'Use training mode for batch norm')
+                     'Use training mode for batch norm.')
 
 ## Flags specific to selecting data loader.
 flags.DEFINE_enum('dataset', 'synthetic', ['synthetic', 'kitti'], 'Dataset')
 flags.DEFINE_enum('data_split', 'val', ['all', 'train', 'val', 'test'],
-                  'Dataset split')
+                  'Dataset split.')
 flags.DEFINE_boolean('debug_synth_texture', False,
-                     'Use ground-truth LDI disparities instead of predicted')
+                     'Use ground-truth LDI disparities instead of predicted '
+                     'disparities.')
 
 ## Flags specific to synthetic data loader.
 flags.DEFINE_string('pascal_objects_dir', '/code/lsi/cachedir/sbd/objects',
-                    'Directory where images of pascal objects are stored')
+                    'Directory containing images of PASCAL objects.')
 flags.DEFINE_string('sun_imgs_dir', '/datasets/SUN2012pascalformat/JPEGImages',
-                    'Directory where SUN dataset images are stored')
+                    'Directory containing SUN dataset images.')
 flags.DEFINE_integer('n_obj_min', 1,
-                     'Min number of foreground layers in synthetic data')
+                     'Minimum number of foreground layers in synthetic data.')
 flags.DEFINE_integer('n_obj_max', 3,
-                     'Max number of foreground layers in synthetic data')
-flags.DEFINE_integer('n_box_planes', 5, 'Number of planes from the box to use')
+                     'Maximum number of foreground layers in synthetic data.')
+flags.DEFINE_integer('n_box_planes', 5, 'Number of planes to use from a 3D box '
+                     'containing the scene.')
 flags.DEFINE_integer(
-    'synth_ds_factor', 1,
-    'Render synthetic data at a higher res and downsample by this factor')
+    'synth_ds_factor', 1, 'Render synthetic data at a higher resolution and '
+    'downsample by this factor (to achieve antialiased '
+    'renders.)')
 flags.DEFINE_boolean('synth_dl_eval_data', True,
-                     'Output gt info for synth data')
+                     'Output ground truth information for synthetic data.')
 
 ## Flags specific to kitti dataset.
 flags.DEFINE_string('kitti_data_root', '/datasets/kitti',
-                    'Directory where kitti data images are cameras are stored')
+                    'Directory containing KITTI images and cameras.')
 flags.DEFINE_enum('kitti_dataset_variant', 'raw_city',
-                  ['odom', 'mview', 'raw_city'], 'Kitti set to use')
+                  ['odom', 'mview', 'raw_city'], 'Kitti set to use.')
 flags.DEFINE_boolean('kitti_dl_disparities', True,
-                     'Whether to output disparities')
+                     'Output ground truth KITTI disparities.')
 
 ## Flags related to the training (loss, CNN architecture etc.).
 flags.DEFINE_float('splat_bdry_ignore', 0,
-                   'Ignore this fraction of pixels along the boundary')
-flags.DEFINE_float('zbuf_scale', 10, 'Scale for zbuffer weight computation')
+                   'Ignore this fraction of pixels along the boundary.')
+flags.DEFINE_float('zbuf_scale', 10, 'Scale for zbuffer weight computation.')
 flags.DEFINE_float('trg_splat_downsampling', 1.0,
-                   'The forward splatted image is downsampled by this factor')
+                   'The forward splatted image is downsampled by this factor.')
 flags.DEFINE_boolean('use_unet', True,
-                     'Whether to use a CNN with skip connections')
+                     'Whether to use a CNN with skip connections.')
 flags.DEFINE_integer('n_layerwise_steps', 3,
-                     'Number of independent per-layer up-conv steps')
+                     'Number of independent per-layer up-convolution steps.')
 
 ## Dataset dependent flags : overridden in code.
 flags.DEFINE_float('bg_layer_disp', 1e-6,
-                   'Disparity of bg layer: value automatically chosen in code')
+                   'Disparity of bg layer: value automatically chosen in code.')
 flags.DEFINE_float(
     'disp_vis_scale', 255,
-    'Disparity visualization scale: value automatically chosen in code')
+    'Disparity visualization scale: value automatically chosen in code.')
 flags.DEFINE_float(
-    'max_disp', 0, """Inverse depth for closest plane.
-    Value automatically chosen in code according to the dataset if set to 0.
-    """)
+    'max_disp', 0, 'Inverse depth for closest plane. '
+    'Value automatically chosen in code according to the dataset if set to 0.')
 
 
 class Tester(test_utils.Tester):
