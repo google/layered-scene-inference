@@ -35,26 +35,26 @@ def define_default_flags(flags):
     flags: loaded flags module
   """
 
-  ## Flags for logging and snapshotting
+  ## Flags for logging and snapshotting.
   flags.DEFINE_string('checkpoint_dir', '/code/lsi/cachedir/snapshots/',
-                      'Root directory for tensorflow output files')
+                      'Root directory for tensorflow output files.')
   flags.DEFINE_string(
       'pretrain_name', '',
-      'Name of previous net to pretrain from. Empty -> from scratch')
+      'Name of previous net to pretrain from. Empty -> from scratch.')
   flags.DEFINE_integer(
       'pretrain_iter', 100000,
-      'Iteration of previous net to pretrain from. Empty -> from scratch')
+      'Iteration of previous net to pretrain from. Empty -> from scratch.')
 
-  ## Flags for training
-  flags.DEFINE_integer('batch_size', 2, 'Size of minibatches')
-  flags.DEFINE_integer('num_iter', 100000, 'Number of training iterations')
-  flags.DEFINE_integer('img_height', 256, 'image height')
-  flags.DEFINE_integer('img_width', 256, 'image width')
-  flags.DEFINE_integer('log_freq', 5, 'logging frequency')
-  flags.DEFINE_integer('checkpoint_freq', 50000, 'checkpoint frequency')
-  flags.DEFINE_integer('save_latest_freq', 2000, 'latest model save frequency')
-  flags.DEFINE_float('learning_rate', 0.0001, 'learning rate')
-  flags.DEFINE_float('beta1', 0.9, 'Momentum term of adam')
+  ## Flags for training.
+  flags.DEFINE_integer('batch_size', 2, 'Size of minibatches.')
+  flags.DEFINE_integer('num_iter', 100000, 'Number of training iterations.')
+  flags.DEFINE_integer('img_height', 256, 'Image height.')
+  flags.DEFINE_integer('img_width', 256, 'Image width.')
+  flags.DEFINE_integer('log_freq', 5, 'Logging frequency.')
+  flags.DEFINE_integer('checkpoint_freq', 50000, 'Checkpoint frequency.')
+  flags.DEFINE_integer('save_latest_freq', 2000, 'Latest model save frequency.')
+  flags.DEFINE_float('learning_rate', 0.0001, 'Learning rate.')
+  flags.DEFINE_float('beta1', 0.9, 'Momentum term of Adam.')
 
 
 class Trainer(object):
@@ -205,9 +205,6 @@ class Trainer(object):
             'train': self.train_op,
             'global_step': self.global_step,
             'incr_global_step': self.incr_global_step,
-            # 'check': check_op,
-            # 'mean_grads': self.mean_grads,
-            # 'mean_grads_debug': self.mean_grads_debug,
         }
 
         if step % opts.log_freq == 0:

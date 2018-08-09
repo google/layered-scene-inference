@@ -43,27 +43,27 @@ def define_default_flags(flags):
   ## Flags for logging and snapshotting
   flags.DEFINE_string('checkpoint_dir',
                       '/code/lsi/cachedir/snapshots/',
-                      'Root directory for tensorflow output files')
+                      'Root directory for tensorflow output files.')
   flags.DEFINE_string('results_vis_dir',
                       '/code/lsi/cachedir/visualization/',
-                      'Root directory for image output files')
+                      'Root directory for image output files.')
   flags.DEFINE_string('results_eval_dir',
                       '/code/lsi/cachedir/evaluation/',
-                      'Root directory for results')
+                      'Root directory for results.')
   flags.DEFINE_string('exp_name', '', 'Name of previous net to pretrain from.')
   flags.DEFINE_integer(
       'train_iter', 0,
-      'Iteration of saved net to evaluate. 0 implies use latest')
+      'Iteration of saved net to evaluate. 0 implies use latest.')
 
   ## Flags for training
-  flags.DEFINE_integer('batch_size', 2, 'Size of minibatches')
-  flags.DEFINE_integer('num_eval_iter', 100, 'Number of testing iterations')
-  flags.DEFINE_integer('img_height', 256, 'image height')
-  flags.DEFINE_integer('img_width', 256, 'image width')
-  flags.DEFINE_integer('visuals_freq', 10, 'logging frequency for visuals')
+  flags.DEFINE_integer('batch_size', 2, 'Size of minibatches.')
+  flags.DEFINE_integer('num_eval_iter', 100, 'Number of testing iterations.')
+  flags.DEFINE_integer('img_height', 256, 'Image height.')
+  flags.DEFINE_integer('img_width', 256, 'Image width.')
+  flags.DEFINE_integer('visuals_freq', 10, 'Logging frequency for visuals.')
   flags.DEFINE_boolean(
       'save_pred_results', False,
-      'Save predictions at every iter. Useful for KITTI depth eval.')
+      'Save predictions at every iteration. Useful for KITTI depth eval.')
 
 
 class Tester(object):
